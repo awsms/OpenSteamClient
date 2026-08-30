@@ -58,6 +58,7 @@
         "#App_InstallApp": "Asenna",
         "#App_UpdateApp": "Päivitä",
         "#App_PauseAppUpdate": "Keskeytä",
+        "#App_ResumeAppUpdate": "Jatka päivitystä",
         "#App_StopApp": "Lopeta",
         "#App_StoppingApp": "Lopetetaan",
         "#App_CancelAppLaunch": "Peruuta",

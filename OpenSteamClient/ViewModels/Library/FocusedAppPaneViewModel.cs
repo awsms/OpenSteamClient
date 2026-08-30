@@ -56,6 +56,18 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
     private ICommand playButtonAction;
 
     [ObservableProperty]
+    private bool playButtonEnabled;
+
+    [ObservableProperty]
+    private string updateButtonLocalizationToken;
+
+    [ObservableProperty]
+    private ICommand updateButtonAction;
+
+    [ObservableProperty]
+    private bool updateButtonVisible;
+
+    [ObservableProperty]
     private double logoHeight;
 
     [ObservableProperty]
@@ -112,6 +124,8 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
 
         PlayButtonLocalizationToken = "Initial state";
         PlayButtonAction = new RelayCommand(InvalidAction);
+        UpdateButtonLocalizationToken = "#App_UpdateApp";
+        UpdateButtonAction = new RelayCommand(InvalidAction);
         UpdatePlayButton(App.State);
     }
 
@@ -148,6 +162,11 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
             isAppPlayable = launchInterface.LaunchOptions.Any();
         }
 
+        PlayButtonEnabled = true;
+        UpdateButtonVisible = false;
+        UpdateButtonLocalizationToken = "#App_UpdateApp";
+        UpdateButtonAction = new RelayCommand(Update);
+
         if (state.HasFlag(EAppState.AppRunning))
         {
             PlayButtonLocalizationToken = "#App_StopApp";
@@ -157,18 +176,18 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
         {
             PlayButtonLocalizationToken = "#App_StoppingApp";
             PlayButtonAction = new RelayCommand(InvalidAction);
+            PlayButtonEnabled = false;
         }
         else if (state.HasFlag(EAppState.UpdateRunning))
         {
-            PlayButtonLocalizationToken = "#App_PauseAppUpdate";
-            PlayButtonAction = new RelayCommand(PauseUpdate);
+            PlayButtonLocalizationToken = App.Type == EAppType.Game ? "#App_PlayApp" : "#App_LaunchApp";
+            PlayButtonAction = new RelayCommand(InvalidAction);
+            PlayButtonEnabled = false;
+            UpdateButtonVisible = true;
+            UpdateButtonLocalizationToken = "#App_PauseAppUpdate";
+            UpdateButtonAction = new RelayCommand(PauseUpdate);
         }
-        else if (state.HasFlag(EAppState.UpdateRequired) || state.HasFlag(EAppState.UpdatePaused) || state.HasFlag(EAppState.UpdateQueued))
-        {
-            PlayButtonLocalizationToken = "#App_UpdateApp";
-            PlayButtonAction = new RelayCommand(Update);
-        }
-        else if (isAppPlayable && state == EAppState.FullyInstalled)
+        else if (isAppPlayable && state.HasFlag(EAppState.FullyInstalled))
         {
             if (App.Type == EAppType.Game)
             {
@@ -180,10 +199,10 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
                 PlayButtonLocalizationToken = "#App_LaunchApp";
                 PlayButtonAction = new RelayCommand(Launch);
             }
-        } else if (state == EAppState.Uninstalled || state.HasFlag(EAppState.SharedOnly)) {
+        } else if (state.HasFlag(EAppState.Uninstalled) || state.HasFlag(EAppState.SharedOnly)) {
             PlayButtonLocalizationToken = "#App_InstallApp";
             PlayButtonAction = new RelayCommand(RequestInstall);
-        } else if ((!isAppPlayable) && state == EAppState.FullyInstalled) {
+        } else if ((!isAppPlayable) && state.HasFlag(EAppState.FullyInstalled)) {
             PlayButtonLocalizationToken = "#App_UninstallApp";
             PlayButtonAction = new RelayCommand(Uninstall);
         }
@@ -191,6 +210,21 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
         {
             PlayButtonLocalizationToken = "Unknown state: " + state.ToString();
             PlayButtonAction = new RelayCommand(InvalidAction);
+            PlayButtonEnabled = false;
+        }
+
+        if (!state.HasFlag(EAppState.AppRunning) &&
+            !state.HasFlag(EAppState.Terminating) &&
+            !state.HasFlag(EAppState.UpdateRunning) &&
+            (state.HasFlag(EAppState.UpdateRequired) ||
+             state.HasFlag(EAppState.UpdatePaused) ||
+             state.HasFlag(EAppState.UpdateQueued)))
+        {
+            UpdateButtonVisible = true;
+            if (state.HasFlag(EAppState.UpdatePaused))
+            {
+                UpdateButtonLocalizationToken = "#App_ResumeAppUpdate";
+            }
         }
     }
 

@@ -58,6 +58,7 @@
         "#App_InstallApp": "Install",
         "#App_UpdateApp": "Update",
         "#App_PauseAppUpdate": "Pause",
+        "#App_ResumeAppUpdate": "Resume update",
         "#App_StopApp": "Stop",
         "#App_StoppingApp": "Stopping",
         "#App_CancelAppLaunch": "Cancel",
