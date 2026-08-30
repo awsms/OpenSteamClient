@@ -7,7 +7,7 @@
         <DefineConstants>$(DefineConstants);AVALONIA_ILAUNCHER_API</DefineConstants>
 
         <!-- Custom build required by: GameOverlayUI headless transparency -->
-        <AvaloniaVersion>11.2.999-cibuild0049203-alpha</AvaloniaVersion>
+        <AvaloniaVersion>11.3.20</AvaloniaVersion>
         <!-- Old version: 11.2.999-cibuild0049126-alpha -->
 
         <!-- AvaloniaAccessUnstablePrivateApis is Enabled -->

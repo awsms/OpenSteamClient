@@ -52,7 +52,7 @@ public class AvaloniaApp : Application
 		CApi.Initialize(installManager);
 
 		var loggerFactory = new LoggerFactory(installManager);
-		Container = new Container(installManager, loggerFactory);
+		Container = new OpenSteamworks.Client.DI.Container(installManager, loggerFactory);
 		Container.ConstructAndRegister<LifetimeManager>();
 	}
 

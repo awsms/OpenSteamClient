@@ -24,7 +24,7 @@
     <AvaloniaXaml Remove="Views/Debugging/Borked/**"/>
 
     <PackageReference Include="QRCoder" Version="1.4.3" />
-    <PackageReference Include="Avalonia.AvaloniaEdit" Version="11.0.6" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="11.4.1" />
   </ItemGroup>
 
   <ItemGroup>

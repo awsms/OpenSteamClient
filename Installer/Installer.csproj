@@ -29,11 +29,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.7" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.7" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.7" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.7" />
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.7" />
+    <PackageReference Include="Avalonia" Version="11.3.20" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.20" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.20" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.20" />
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.20" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="7.0.8" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
