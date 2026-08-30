@@ -8,22 +8,46 @@
         x:Class="OpenSteamClient.Views.Windows.AppSettingsWindow"
         x:DataType="vm:AppSettingsWindowViewModel"
         Title="{Binding Name, StringFormat='{}{0} - settings'}">
-    <StackPanel>
-        <TextBlock Text="Set the compat tool override for this app:"/>
-        <ComboBox ItemsSource="{Binding CompatTools}" SelectedItem="{Binding SelectedCompatTool}"/>
-        <TextBlock Text="{Binding EffectiveCompatTool}"/>
-        <Button Command="{Binding OnUninstall}" IsVisible="{Binding  IsInstalled}"  Content="Uninstall (NO CONFIRMATION!)"/>
-        <TextBlock Text="Set a beta for this app"></TextBlock>
-        <ComboBox ItemsSource="{Binding Betas}" SelectedItem="{Binding SelectedBeta}">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Display}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
-        <TextBlock Text="Or enter a beta password"/>
-        <TextBox Text="{Binding BetaPassword}"></TextBox>
-        <Button Content="Check password" Command="{Binding OnCheckBetaPassword}"></Button>
-    </StackPanel>
-</Window>
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="16">
+            <StackPanel Spacing="6" IsVisible="{Binding SupportsLaunchOptions}">
+                <TextBlock Text="Launch options" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock Text="Commands and environment variables inserted around %command%." Opacity="0.65"/>
+                <TextBox Text="{Binding LaunchOptions}" AcceptsReturn="True" MinHeight="72"/>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Content="Save launch options" Command="{Binding SaveLaunchOptionsCommand}"/>
+                    <TextBlock Text="{Binding LaunchOptionsStatus}" VerticalAlignment="Center" Opacity="0.75"/>
+                </StackPanel>
+            </StackPanel>
 
+            <Separator/>
+
+            <StackPanel Spacing="6">
+                <TextBlock Text="Compatibility" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock Text="Set the compatibility tool override for this app:"/>
+                <ComboBox ItemsSource="{Binding CompatTools}" SelectedItem="{Binding SelectedCompatTool}"/>
+                <TextBlock Text="{Binding EffectiveCompatTool}"/>
+            </StackPanel>
+
+            <Separator/>
+
+            <StackPanel Spacing="6">
+                <TextBlock Text="Beta branch" FontSize="18" FontWeight="SemiBold"/>
+                <ComboBox ItemsSource="{Binding Betas}" SelectedItem="{Binding SelectedBeta}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Display}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="Or enter a beta password"/>
+                <TextBox Text="{Binding BetaPassword}"/>
+                <Button Content="Check password" Command="{Binding OnCheckBetaPassword}" HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <Separator IsVisible="{Binding IsInstalled}"/>
+            <Button Command="{Binding OnUninstall}" IsVisible="{Binding IsInstalled}"
+                    Content="Uninstall (NO CONFIRMATION!)" HorizontalAlignment="Left"/>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

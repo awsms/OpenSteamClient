@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AvaloniaCommon;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Primitives;
 using OpenSteamworks;
 using OpenSteamworks.Client.Apps;
@@ -19,6 +20,15 @@ public partial class AppSettingsWindowViewModel : ViewModelBase
 {
     [ObservableProperty]
     private string name;
+
+    [ObservableProperty]
+    private string launchOptions = string.Empty;
+
+    [ObservableProperty]
+    private string launchOptionsStatus = string.Empty;
+
+    public bool SupportsLaunchOptions =>
+        _configInterface?.SupportedKeys.Contains(IAppConfigInterface.ConfigKey.LAUNCH_COMMAND_LINE) == true;
 
     public ObservableCollection<string> CompatTools { get; } = new();
 
@@ -125,6 +135,13 @@ public partial class AppSettingsWindowViewModel : ViewModelBase
 
         this.Name = this.app.Name;
 
+        if (SupportsLaunchOptions &&
+            _configInterface!.TryGetConfigValue(IAppConfigInterface.ConfigKey.LAUNCH_COMMAND_LINE, out var launchOptions) &&
+            launchOptions is string launchOptionsString)
+        {
+            LaunchOptions = launchOptionsString;
+        }
+
         CompatTools.Add(NO_TOOL);
         Betas.Add(NO_BETA);
 
@@ -169,6 +186,22 @@ public partial class AppSettingsWindowViewModel : ViewModelBase
                 CompatTools.Add(tool);
             }
         }
+    }
+
+    [RelayCommand]
+    private void SaveLaunchOptions()
+    {
+        if (!SupportsLaunchOptions || _configInterface is null)
+        {
+            LaunchOptionsStatus = "Launch options are not supported for this item.";
+            return;
+        }
+
+        LaunchOptionsStatus = _configInterface.SetConfigValue(
+            IAppConfigInterface.ConfigKey.LAUNCH_COMMAND_LINE,
+            LaunchOptions)
+            ? "Launch options saved."
+            : "Failed to save launch options.";
     }
 
     private void App_PropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -15,6 +15,8 @@ namespace OpenSteamworks.Client.Apps;
 
 internal sealed class SteamApp : ObservableObject, IApp, IAppInfoAccessInterface, IAppConfigInterface, IAppLaunchInterface, IAppAssetsInterface, IAppInstallInterface, IAppInfoUpdateInterface
 {
+	private string LaunchOptionsConfigKey => $"Software\\Valve\\Steam\\Apps\\{AppID}\\LaunchOptions";
+
 	public AppDataCommonSection Common { get; private set; }
     public AppDataConfigSection Config { get; private set; }
     public AppDataExtendedSection Extended { get; private set; }
@@ -115,11 +117,13 @@ internal sealed class SteamApp : ObservableObject, IApp, IAppInfoAccessInterface
 				if (value is string launchOptStr)
 				{
 					if (!_steamClient.ConfigStoreHelper.Set(EConfigStore.UserLocal,
-						    $"Software\\Valve\\Steam\\Apps\\{AppID}\\LaunchOptions", launchOptStr))
+						    LaunchOptionsConfigKey, launchOptStr))
 					{
 						Logger.GeneralLogger.Error($"SteamApp {AppID}: Failed to set launch command line! (opt: \"{launchOptStr}\")");
 						return false;
 					}
+
+					return true;
 				}
 
 				break;
@@ -174,7 +178,7 @@ internal sealed class SteamApp : ObservableObject, IApp, IAppInfoAccessInterface
 		{
 			case IAppConfigInterface.ConfigKey.LAUNCH_COMMAND_LINE:
 				value = _steamClient.ConfigStoreHelper.Get(EConfigStore.UserLocal,
-					$"Software\\Valve\\Steam\\Apps\\{AppID}\\LaunchOptions", "");
+					LaunchOptionsConfigKey, "");
 
 				return true;
 			case IAppConfigInterface.ConfigKey.COMPAT_TOOL_NAME:
