@@ -600,18 +600,17 @@ public class Bootstrapper {
 
     private bool VerifyFiles(IProgress<OperationProgress> progressHandler, out IEnumerable<string> failureReason) {
         var failureReasons = new List<string>();
-        // Verify all files and skip this step if files are valid and version matches
+        // Installed packages depend on Valve's manifest, not on the OpenSteamClient
+        // commit. A client rebuild must not force extraction of unchanged packages.
         bool failedSteamVer = bootstrapperState.InstalledVersion != VersionInfo.STEAM_MANIFEST_VERSION;
-        bool failedCommit = bootstrapperState.CommitHash != GitInfo.GitCommit;
-        bool failed =  failedSteamVer || failedCommit;
-        if (failed) {
-            if (failedSteamVer) {
-                failureReasons.Add($"Installed manifest (${bootstrapperState.InstalledVersion}) does not match expected (${VersionInfo.STEAM_MANIFEST_VERSION})");
-            }
+        bool commitChanged = bootstrapperState.CommitHash != GitInfo.GitCommit;
+        bool failed = failedSteamVer;
+        if (failedSteamVer) {
+            failureReasons.Add($"Installed manifest (${bootstrapperState.InstalledVersion}) does not match expected (${VersionInfo.STEAM_MANIFEST_VERSION})");
+        }
 
-            if (failedCommit) {
-                failureReasons.Add($"Installed commit (${bootstrapperState.CommitHash}) does not match expected (${GitInfo.GitCommit})");
-            }
+        if (commitChanged) {
+            logger.Info($"Client commit changed from ${bootstrapperState.CommitHash} to ${GitInfo.GitCommit}; package extraction is not required");
         }
         int installedFilesLength = bootstrapperState.InstalledFiles.Count;
         int checkedFiles = 0;
