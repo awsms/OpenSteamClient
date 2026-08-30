@@ -95,7 +95,6 @@ public class SteamHTML : IClientLifetime
             if (!globalSettings.WebhelperGPUAcceleration)
             {
                 htmlHost.StartInfo.ArgumentList.Add("--disable-gpu");
-                htmlHost.StartInfo.ArgumentList.Add("--disable-gpu-compositing");
             }
 
             if (!globalSettings.WebhelperGPUAcceleration || !globalSettings.WebhelperGPUVideoDecode)
