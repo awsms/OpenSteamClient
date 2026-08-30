@@ -1,3 +1,4 @@
+using System;
 using OpenSteamClient.Extensions;
 using OpenSteamClient.Controls;
 
@@ -9,5 +10,11 @@ public partial class DownloadsPage : BasePage
     {
         InitializeComponent();
         this.TranslatableInit();
+    }
+
+    public override void Free()
+    {
+        (DataContext as IDisposable)?.Dispose();
+        base.Free();
     }
 }

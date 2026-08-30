@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -12,14 +13,23 @@ using OpenSteamworks.Helpers;
 
 namespace OpenSteamClient.ViewModels.Downloads;
 
-public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase {
+public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDisposable {
     public ObservableCollection<DownloadItemViewModel> DownloadQueue { get; init; } = new();
     public ObservableCollection<DownloadItemViewModel> ScheduledDownloads { get; init; } = new();
     public ObservableCollection<DownloadItemViewModel> UnscheduledDownloads { get; init; } = new();
 
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDownloading))]
+    [NotifyPropertyChangedFor(nameof(IsIdle))]
     private DownloadItemViewModel? _currentDownload;
+
+    public bool IsDownloading => CurrentDownload is not null;
+    public bool IsIdle => CurrentDownload is null;
+
+    public bool HasQueuedDownloads => DownloadQueue.Count > 0;
+    public bool HasScheduledDownloads => ScheduledDownloads.Count > 0;
+    public bool HasUnscheduledDownloads => UnscheduledDownloads.Count > 0;
 
     [ObservableProperty]
     private ulong _peakDownloadRateNum;
@@ -57,28 +67,31 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase {
     private void OnDownloadQueueChanged(object? sender, DownloadsHelper.DownloadScheduleChangedEventArgs e)
     {
         // Update download queue
+        DisposeItems(DownloadQueue);
         this.DownloadQueue.Clear();
         foreach (var newitem in e.QueuedApps)
         {
-            Console.WriteLine("queue: " + newitem);
             this.DownloadQueue.Add(new DownloadItemViewModel(_downloadManager, newitem));
         }
+        OnPropertyChanged(nameof(HasQueuedDownloads));
 
         // Update scheduled downloads
+        DisposeItems(ScheduledDownloads);
         this.ScheduledDownloads.Clear();
         foreach (var newitem in e.ScheduledApps)
         {
-            Console.WriteLine("scheduled: " + newitem);
-            this.ScheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, newitem.Key));
+            this.ScheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, newitem.Key, newitem.Value));
         }
+        OnPropertyChanged(nameof(HasScheduledDownloads));
 
         // Update unscheduled downloads
+        DisposeItems(UnscheduledDownloads);
         this.UnscheduledDownloads.Clear();
         foreach (var newitem in e.UnscheduledApps)
         {
-            Console.WriteLine("unscheduled: " + newitem);
             this.UnscheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, newitem));
         }
+        OnPropertyChanged(nameof(HasUnscheduledDownloads));
     }
 
 #pragma warning disable MVVMTK0034
@@ -89,8 +102,14 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase {
 #pragma warning restore MVVMTK0034
     private void UpdateRates(DownloadsHelper.DownloadChangedEventArgs downloadStats) {
         if (downloadStats.DownloadingAppID != 0) {
-            this.CurrentDownload = new DownloadItemViewModel(_downloadManager, downloadStats.DownloadingAppID);
+            if (CurrentDownload?.AppID != downloadStats.DownloadingAppID) {
+                CurrentDownload?.Dispose();
+                CurrentDownload = new DownloadItemViewModel(_downloadManager, downloadStats.DownloadingAppID, listenForUpdates: false);
+            }
+
+            CurrentDownload.Update(downloadStats);
         } else {
+            CurrentDownload?.Dispose();
             this.CurrentDownload = null;
         }
 
@@ -106,5 +125,23 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase {
         CurrentDiskRate = DataUnitStrings.GetStringForDownloadSpeed(downloadStats.DiskRate, _userSettings.DownloadDataRateUnit);
         PeakDownloadRate = DataUnitStrings.GetStringForDownloadSpeed(PeakDownloadRateNum, _userSettings.DownloadDataRateUnit);
         PeakDiskRate = DataUnitStrings.GetStringForDownloadSpeed(PeakDiskRateNum, _userSettings.DownloadDataRateUnit);
+    }
+
+    private static void DisposeItems(IEnumerable<DownloadItemViewModel> items)
+    {
+        foreach (var item in items) {
+            item.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        _downloadManager.DownloadChanged -= OnDownloadChanged;
+        _downloadManager.DownloadScheduleChanged -= OnDownloadQueueChanged;
+        CurrentDownload?.Dispose();
+        DisposeItems(DownloadQueue);
+        DisposeItems(ScheduledDownloads);
+        DisposeItems(UnscheduledDownloads);
+        GC.SuppressFinalize(this);
     }
 }

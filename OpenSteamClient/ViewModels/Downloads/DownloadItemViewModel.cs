@@ -13,20 +13,27 @@ using OpenSteamworks.Data.Enums;
 
 namespace OpenSteamClient.ViewModels.Downloads;
 
-public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase {
+public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisposable {
     public string Name => AvaloniaApp.Container.Get<AppsHelper>().GetAppLocalizedName(AppID);
 
     [ObservableProperty]
     private AppId_t _appID;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProgressText))]
     private double _currentDownloadProgress;
 
+    public string ProgressText => $"{CurrentDownloadProgress:P0}";
+
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTransferDetails))]
     private string _downloadSize = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTransferDetails))]
     private string _diskSize = string.Empty;
+
+    public bool HasTransferDetails => !string.IsNullOrEmpty(DownloadSize) || !string.IsNullOrEmpty(DiskSize);
 
     [ObservableProperty]
     private DateTime? _downloadStarted;
@@ -37,18 +44,34 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase {
     [ObservableProperty]
     private DateTime? _estimatedCompletion;
 
+    [ObservableProperty]
+    private DateTime? _scheduledFor;
+
     private readonly DownloadsHelper _downloadsHelper;
-    public DownloadItemViewModel(DownloadsHelper downloadsHelper, AppId_t appid) {
+    private readonly bool _listensForUpdates;
+    public DownloadItemViewModel(DownloadsHelper downloadsHelper, AppId_t appid, DateTime? scheduledFor = null, bool listenForUpdates = true) {
         AppID = appid;
+        ScheduledFor = scheduledFor;
         this._downloadsHelper = downloadsHelper;
-        this._downloadsHelper.DownloadChanged += OnDownloadChanged;
+        _listensForUpdates = listenForUpdates;
+        if (_listensForUpdates) {
+            this._downloadsHelper.DownloadChanged += OnDownloadChanged;
+        }
     }
 
     private void OnDownloadChanged(object? sender, DownloadsHelper.DownloadChangedEventArgs e)
     {
+        if (e.DownloadingAppID != AppID) {
+            return;
+        }
+
+        Update(e);
+    }
+
+    public void Update(DownloadsHelper.DownloadChangedEventArgs e)
+    {
         if (e.DownloadFinished != DateTime.MinValue) {
-            // Update finished, deregister to allow for this object to be GCd
-            this._downloadsHelper.DownloadChanged -= OnDownloadChanged;
+            DownloadFinished = e.DownloadFinished;
             return;
         }
 
@@ -66,5 +89,13 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase {
         this.DownloadStarted = e.DownloadStarted;
         this.DownloadFinished = e.DownloadFinished;
         this.EstimatedCompletion = DateTime.Now + e.EstimatedTimeRemaining;
+    }
+
+    public void Dispose()
+    {
+        if (_listensForUpdates) {
+            _downloadsHelper.DownloadChanged -= OnDownloadChanged;
+        }
+        GC.SuppressFinalize(this);
     }
 }

@@ -1,97 +1,182 @@
 <c:BasePage xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:OpenSteamClient.ViewModels"
         xmlns:vmd="using:OpenSteamClient.ViewModels.Downloads"
-        xmlns:views="using:OpenSteamClient.Views"
         xmlns:c="using:OpenSteamClient.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
         x:Class="OpenSteamClient.Views.DownloadsPage"
         x:DataType="vmd:DownloadsPageViewModel">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at AvaloniaApp.axaml.cs) -->
         <vmd:DownloadsPageViewModel/>
     </Design.DataContext>
 
-    <DockPanel>
-        <!-- Current network usage and graph section -->
-        <!-- TODO: We don't have a graph... -->
-        <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="Downloading"/>
-            <TextBlock Text="{Binding CurrentDownload.Name}"/>
-            <TextBlock Text="{Binding CurrentDownload.EstimatedCompletion}"/>
-            <TextBlock Text="{Binding CurrentDownloadRate}"/>
-            <TextBlock Text="{Binding CurrentDiskRate}"/>
-            <TextBlock Text="{Binding PeakDownloadRate}"/>
-            <TextBlock Text="{Binding PeakDiskRate}"/>
-        </StackPanel>
+    <c:BasePage.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="BorderBrush" Value="#40808080"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Opacity" Value="0.65"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="TextBlock.metric">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Border.download-row">
+            <Setter Property="Margin" Value="0,6,0,0"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="BorderBrush" Value="#30808080"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+    </c:BasePage.Styles>
 
-        <ScrollViewer>
-            <StackPanel>
-                <TextBlock Text="Queued"/>
-                    <ItemsControl ItemsSource="{Binding DownloadQueue}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,10,0,0"
-                                    CornerRadius="5"
-                                    BorderBrush="Blue" BorderThickness="1"
-                                    Padding="5">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}"/>
-                                        <TextBlock Text="{Binding DownloadSize}"/>
-                                        <TextBlock Text="{Binding DiskSize}"/>
-                                        <ProgressBar Maximum="1.0"
-                                                    Value="{Binding CurrentDownloadProgress}"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <TextBlock Text="Scheduled"/>
-                    <ItemsControl ItemsSource="{Binding ScheduledDownloads}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,10,0,0"
-                                    CornerRadius="5"
-                                    BorderBrush="Blue" BorderThickness="1"
-                                    Padding="5">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}"/>
-                                        <TextBlock Text="{Binding DownloadSize}"/>
-                                        <TextBlock Text="{Binding DiskSize}"/>
-                                        <TextBlock Text="{Binding DownloadStarted}"/>
-                                        <ProgressBar Maximum="1.0"
-                                                    Value="{Binding CurrentDownloadProgress}"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <TextBlock Text="Unscheduled"/>
-                    <ItemsControl ItemsSource="{Binding UnscheduledDownloads}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,10,0,0"
-                                    CornerRadius="5"
-                                    BorderBrush="Blue" BorderThickness="1"
-                                    Padding="5">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}"/>
-                                        <TextBlock Text="{Binding DownloadSize}"/>
-                                        <TextBlock Text="{Binding DiskSize}"/>
-                                        <ProgressBar Maximum="1.0"
-                                                    Value="{Binding CurrentDownloadProgress}"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="18" MaxWidth="1000" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="3">
+                <TextBlock Text="Downloads" FontSize="28" FontWeight="SemiBold"/>
+                <TextBlock Text="Download activity, disk usage and pending updates" Opacity="0.65"/>
             </StackPanel>
-        </ScrollViewer>
-    </DockPanel>
+
+            <Border Classes="card">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Current activity" Classes="section-title"/>
+                            <TextBlock Text="Nothing is downloading right now" IsVisible="{Binding IsIdle}" Opacity="0.65"/>
+                            <TextBlock Text="{Binding CurrentDownload.Name}" IsVisible="{Binding IsDownloading}"
+                                       FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" IsVisible="{Binding IsDownloading}" Background="#283FAE49"
+                                CornerRadius="12" Padding="10,4" VerticalAlignment="Top">
+                            <TextBlock Text="DOWNLOADING" FontSize="11" FontWeight="Bold"/>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel IsVisible="{Binding IsDownloading}" Spacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Progress" Classes="label"/>
+                            <TextBlock Grid.Column="1" Text="{Binding CurrentDownload.ProgressText}" Classes="label"/>
+                        </Grid>
+                        <ProgressBar Minimum="0" Maximum="1" Height="8"
+                                     Value="{Binding CurrentDownload.CurrentDownloadProgress}"/>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel>
+                                <TextBlock Text="Download size" Classes="label"/>
+                                <TextBlock Text="{Binding CurrentDownload.DownloadSize}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Disk work" Classes="label"/>
+                                <TextBlock Text="{Binding CurrentDownload.DiskSize}"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="{Binding CurrentDownload.EstimatedCompletion, StringFormat='Estimated completion: {0:t}'}"
+                                   Opacity="0.65"/>
+                    </StackPanel>
+
+                    <Separator/>
+
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="18">
+                        <StackPanel>
+                            <TextBlock Text="Network" Classes="label"/>
+                            <TextBlock Text="{Binding CurrentDownloadRate}" Classes="metric"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Disk usage" Classes="label"/>
+                            <TextBlock Text="{Binding CurrentDiskRate}" Classes="metric"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Peak network" Classes="label"/>
+                            <TextBlock Text="{Binding PeakDownloadRate}" Classes="metric"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3">
+                            <TextBlock Text="Peak disk" Classes="label"/>
+                            <TextBlock Text="{Binding PeakDiskRate}" Classes="metric"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                    <TextBlock Text="Next in queue" Classes="section-title"/>
+                    <Border Grid.Column="1" Background="#30808080" CornerRadius="10" Padding="8,2">
+                        <TextBlock Text="{Binding DownloadQueue.Count}"/>
+                    </Border>
+                </Grid>
+                <TextBlock Text="No downloads are queued." IsVisible="{Binding !HasQueuedDownloads}" Opacity="0.65"/>
+                <ItemsControl ItemsSource="{Binding DownloadQueue}" IsVisible="{Binding HasQueuedDownloads}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vmd:DownloadItemViewModel">
+                            <Border Classes="download-row">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" Text="Queued" Opacity="0.65"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12"
+                                                IsVisible="{Binding HasTransferDetails}">
+                                        <TextBlock Text="{Binding DownloadSize, StringFormat='Download: {0}'}"/>
+                                        <TextBlock Text="{Binding DiskSize, StringFormat='Disk: {0}'}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                    <TextBlock Text="Scheduled for later" Classes="section-title"/>
+                    <Border Grid.Column="1" Background="#30808080" CornerRadius="10" Padding="8,2">
+                        <TextBlock Text="{Binding ScheduledDownloads.Count}"/>
+                    </Border>
+                </Grid>
+                <TextBlock Text="No downloads are scheduled." IsVisible="{Binding !HasScheduledDownloads}" Opacity="0.65"/>
+                <ItemsControl ItemsSource="{Binding ScheduledDownloads}" IsVisible="{Binding HasScheduledDownloads}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vmd:DownloadItemViewModel">
+                            <Border Classes="download-row">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ScheduledFor, StringFormat='Scheduled: {0:g}'}" Opacity="0.65"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                    <TextBlock Text="Waiting to be scheduled" Classes="section-title"/>
+                    <Border Grid.Column="1" Background="#30808080" CornerRadius="10" Padding="8,2">
+                        <TextBlock Text="{Binding UnscheduledDownloads.Count}"/>
+                    </Border>
+                </Grid>
+                <TextBlock Text="No updates are waiting for a schedule." IsVisible="{Binding !HasUnscheduledDownloads}" Opacity="0.65"/>
+                <ItemsControl ItemsSource="{Binding UnscheduledDownloads}" IsVisible="{Binding HasUnscheduledDownloads}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vmd:DownloadItemViewModel">
+                            <Border Classes="download-row">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" Text="Waiting for Steam to assign a time" Opacity="0.65"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </c:BasePage>
