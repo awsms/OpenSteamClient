@@ -63,6 +63,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
     private readonly AppManagerHelper _appManagerHelper;
     private readonly IClientAppManager _clientAppManager;
     private readonly UserSettings _userSettings;
+    private bool _disposed;
     public DownloadsPageViewModel(DownloadsHelper downloadManager, AppManagerHelper appManagerHelper, IClientAppManager clientAppManager, UserSettings userSettings) {
         this._userSettings = userSettings;
         this._downloadManager = downloadManager;
@@ -76,15 +77,34 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
 
     private void OnDownloadChanged(object? sender, DownloadsHelper.DownloadChangedEventArgs e)
     {
-        UpdateRates(e);
+        RunOnUIThread(() => UpdateRates(e));
     }
 
     private void OnDownloadQueueChanged(object? sender, DownloadsHelper.DownloadScheduleChangedEventArgs e)
     {
+        var queued = e.QueuedApps.Distinct().ToArray();
+        var queuedIDs = queued.ToHashSet();
+        var scheduled = e.ScheduledApps
+            .Where(item => !queuedIDs.Contains(item.Key))
+            .ToArray();
+        var scheduledIDs = scheduled.Select(item => item.Key).ToHashSet();
+        var unscheduled = e.UnscheduledApps
+            .Distinct()
+            .Where(item => !queuedIDs.Contains(item) && !scheduledIDs.Contains(item))
+            .ToArray();
+
+        RunOnUIThread(() => ApplyDownloadSchedule(queued, scheduled, unscheduled));
+    }
+
+    private void ApplyDownloadSchedule(
+        IReadOnlyList<AppId_t> queued,
+        IReadOnlyList<KeyValuePair<AppId_t, DateTime>> scheduled,
+        IReadOnlyList<AppId_t> unscheduled)
+    {
         // Update download queue
         DisposeItems(DownloadQueue);
         this.DownloadQueue.Clear();
-        foreach (var newitem in e.QueuedApps)
+        foreach (var newitem in queued)
         {
             this.DownloadQueue.Add(CreateDownloadItem(newitem));
         }
@@ -93,7 +113,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         // Update scheduled downloads
         DisposeItems(ScheduledDownloads);
         this.ScheduledDownloads.Clear();
-        foreach (var newitem in e.ScheduledApps)
+        foreach (var newitem in scheduled)
         {
             this.ScheduledDownloads.Add(CreateDownloadItem(newitem.Key, newitem.Value));
         }
@@ -102,11 +122,27 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         // Update unscheduled downloads
         DisposeItems(UnscheduledDownloads);
         this.UnscheduledDownloads.Clear();
-        foreach (var newitem in e.UnscheduledApps)
+        foreach (var newitem in unscheduled)
         {
             this.UnscheduledDownloads.Add(CreateDownloadItem(newitem));
         }
         OnPropertyChanged(nameof(HasUnscheduledDownloads));
+    }
+
+    private void RunOnUIThread(Action action)
+    {
+        void RunUnlessDisposed()
+        {
+            if (!_disposed) {
+                action();
+            }
+        }
+
+        if (Dispatcher.UIThread.CheckAccess()) {
+            RunUnlessDisposed();
+        } else {
+            Dispatcher.UIThread.Post(RunUnlessDisposed);
+        }
     }
 
 #pragma warning disable MVVMTK0034
@@ -182,6 +218,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
 
     public void Dispose()
     {
+        _disposed = true;
         _downloadManager.DownloadChanged -= OnDownloadChanged;
         _downloadManager.DownloadScheduleChanged -= OnDownloadQueueChanged;
         CurrentDownload?.Dispose();
