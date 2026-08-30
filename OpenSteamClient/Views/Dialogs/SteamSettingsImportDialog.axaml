@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenSteamClient.ViewModels"
+        x:Class="OpenSteamClient.Views.SteamSettingsImportDialog"
+        x:DataType="vm:SteamSettingsImportDialogViewModel"
+        Icon="/Assets/opensteam-logo.ico"
+        Title="Import settings from Steam"
+        Width="580" Height="390"
+        MinWidth="480" MinHeight="340"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="18" RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="12">
+        <TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold" Text="Choose settings to import"/>
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Opacity="0.7"
+                   Text="OpenSteamClient reads Steam's file once and copies only the selected preferences. Steam's file is never modified."/>
+
+        <StackPanel Grid.Row="2" Spacing="10">
+            <Border Padding="12" BorderThickness="1" CornerRadius="4">
+                <StackPanel>
+                    <CheckBox IsChecked="{Binding ImportLaunchOptions}">
+                        <TextBlock Text="Launch options" FontWeight="SemiBold"/>
+                    </CheckBox>
+                    <TextBlock Margin="24,2,0,0" TextWrapping="Wrap"
+                               Text="{Binding LaunchOptionsCount, StringFormat='{}{0} per-game entries (commands and environment variables).'}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="12" BorderThickness="1" CornerRadius="4">
+                <StackPanel>
+                    <CheckBox IsChecked="{Binding ImportOverlaySettings}">
+                        <TextBlock Text="Per-game Steam Overlay overrides" FontWeight="SemiBold"/>
+                    </CheckBox>
+                    <TextBlock Margin="24,2,0,0" TextWrapping="Wrap"
+                               Text="{Binding OverlaySettingsCount, StringFormat='{}{0} explicit enable/disable entries.'}"/>
+                </StackPanel>
+            </Border>
+
+            <CheckBox IsChecked="{Binding OverwriteExisting}"
+                      Content="Replace values already configured in OpenSteamClient"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Spacing="3">
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding SourcePath}" TextWrapping="Wrap" Opacity="0.55" FontSize="11"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Close" Command="{Binding CloseCommand}"/>
+            <Button Content="Import selected" Command="{Binding ImportCommand}"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -84,6 +84,12 @@
                     <TextBlock Margin="24,0,0,8" TextWrapping="Wrap" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_WebHardwareAccelerationDesc"/>
 
                     <TextBlock FontStyle="Italic" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_RestartRequired"/>
+
+                    <Separator Margin="0,10"/>
+                    <TextBlock FontSize="18" FontWeight="SemiBold" Text="Import settings"/>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.7"
+                               Text="Copy selected per-game preferences from this account's Valve Steam installation."/>
+                    <Button HorizontalAlignment="Left" Content="Import from Steam…" Command="{Binding ImportSteamSettings}"/>
                 </StackPanel>
             </ScrollViewer>
         </TabItem>

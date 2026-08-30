@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using OpenSteamworks.Client.Config;
 using OpenSteamworks.Data;
+using OpenSteamClient.Services;
 
 namespace OpenSteamClient.ViewModels;
 
@@ -35,8 +36,9 @@ public partial class SettingsWindowViewModel : ViewModelBase
     private readonly AppManagerHelper _appManagerHelper;
     private readonly CompatHelper _compatManager;
     private readonly ConfigManager _configManager;
+    private readonly InstallManager _installManager;
 
-    public SettingsWindowViewModel(ConfigManager configManager, AppsHelper clientApps, AppManagerHelper appManagerHelper, CallbackManager callbackManager, SettingsWindow settingsWindow, CompatHelper compatManager, ISteamClient client, TranslationManager tm, LoginManager loginManager)
+    public SettingsWindowViewModel(ConfigManager configManager, AppsHelper clientApps, AppManagerHelper appManagerHelper, CallbackManager callbackManager, SettingsWindow settingsWindow, CompatHelper compatManager, ISteamClient client, TranslationManager tm, LoginManager loginManager, InstallManager installManager)
     {
         callbackManager.Register<LibraryFoldersChanged_t>(OnLibraryFoldersChanged);
         _configManager = configManager;
@@ -47,6 +49,7 @@ public partial class SettingsWindowViewModel : ViewModelBase
         _client = client;
         _tm = tm;
         _loginManager = loginManager;
+        _installManager = installManager;
         PropertyChanged += SelfOnPropertyChanged;
         RefreshLibraryFolders();
         RefreshCompatTools();
@@ -206,6 +209,15 @@ public partial class SettingsWindowViewModel : ViewModelBase
             _configManager.Save(settings);
             OnPropertyChanged();
         }
+    }
+
+    public void ImportSteamSettings()
+    {
+        var dialog = new SteamSettingsImportDialog();
+        dialog.DataContext = new SteamSettingsImportDialogViewModel(
+            dialog,
+            new SteamSettingsImportService(_client, _installManager));
+        _ = dialog.ShowDialog(_settingsWindow);
     }
 
     // Localization
