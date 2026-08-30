@@ -257,6 +257,7 @@ public class Bootstrapper {
                 logger.Error("Failed verification: " + string.Join(", ", failureReason));
                 await EnsurePackages(msgBoxProvider, progressHandler);
                 await ExtractPackages(progressHandler);
+                bootstrapperState.LinuxPermissionsSet = false;
             }
         }
 
@@ -277,12 +278,22 @@ public class Bootstrapper {
             // Process the Steam runtime (needed for SteamVR and some tools steam ships with)
             await CheckSteamRuntime(progressHandler);
 
-            if (!bootstrapperState.LinuxPermissionsSet)
+            var steamWebHelperPath = Path.Combine(installManager.InstallDir, "ubuntu12_64", "steamwebhelper");
+            var steamWebHelperNeedsExecute = File.Exists(steamWebHelperPath) &&
+                !File.GetUnixFileMode(steamWebHelperPath).HasFlag(UnixFileMode.UserExecute);
+
+            if (!bootstrapperState.LinuxPermissionsSet || steamWebHelperNeedsExecute)
             {
 				progressHandler.Report(new("Marking files as executable"));
 
                 // Valve doesn't include permission info in the zips, so chmod them all to allow execute
-                await Process.Start("/usr/bin/chmod", "-R +x " + '"' + installManager.InstallDir + '"').WaitForExitAsync();
+                using var chmod = Process.Start(new ProcessStartInfo("/usr/bin/chmod")
+                {
+                    ArgumentList = { "-R", "+x", installManager.InstallDir }
+                }) ?? throw new InvalidOperationException("Failed to start chmod.");
+                await chmod.WaitForExitAsync();
+                if (chmod.ExitCode != 0)
+                    throw new InvalidOperationException($"chmod failed with exit code {chmod.ExitCode}.");
 
                 bootstrapperState.LinuxPermissionsSet = true;
             }
