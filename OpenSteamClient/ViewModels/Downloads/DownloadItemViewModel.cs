@@ -14,6 +14,8 @@ using OpenSteamworks.Data.Enums;
 namespace OpenSteamClient.ViewModels.Downloads;
 
 public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisposable {
+    private const ulong MaximumPlausibleTransferSize = 16UL * 1024 * 1024 * 1024 * 1024;
+
     public string Name => AvaloniaApp.Container.Get<AppsHelper>().GetAppLocalizedName(AppID);
 
     [ObservableProperty]
@@ -75,21 +77,34 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisp
             return;
         }
 
-        //Console.WriteLine($"{AppID}: " + updateInfo.ToString());
-        if (e.TotalToProcess != 0 && e.TotalToProcess != e.TotalProcessed) {
-            this.CurrentDownloadProgress = (double)e.TotalProcessed / e.TotalToProcess;
-        } else if (e.TotalToDownload != 0 && e.TotalToDownload != e.TotalDownloaded) {
-            this.CurrentDownloadProgress = (double)e.TotalDownloaded / e.TotalToDownload;
+        var hasValidDownloadStats = IsValidProgress(e.TotalDownloaded, e.TotalToDownload);
+        var hasValidDiskStats = IsValidProgress(e.TotalProcessed, e.TotalToProcess);
+
+        if (hasValidDiskStats) {
+            CurrentDownloadProgress = Math.Clamp((double)e.TotalProcessed / e.TotalToProcess, 0, 1);
+        } else if (hasValidDownloadStats) {
+            CurrentDownloadProgress = Math.Clamp((double)e.TotalDownloaded / e.TotalToDownload, 0, 1);
+        } else {
+            CurrentDownloadProgress = 0;
         }
 
-        this.DownloadSize = DataUnitStrings.GetStringForSize(e.TotalToDownload, DataSizeUnit.Auto_GB_MB_KB_B);
-        this.DiskSize = DataUnitStrings.GetStringForSize(e.TotalToProcess, DataSizeUnit.Auto_GB_MB_KB_B);
+        DownloadSize = hasValidDownloadStats
+            ? DataUnitStrings.GetStringForSize(e.TotalToDownload, DataSizeUnit.Auto_GB_MB_KB_B)
+            : "Calculating…";
+        DiskSize = hasValidDiskStats
+            ? DataUnitStrings.GetStringForSize(e.TotalToProcess, DataSizeUnit.Auto_GB_MB_KB_B)
+            : "Calculating…";
 
 
         this.DownloadStarted = e.DownloadStarted;
         this.DownloadFinished = e.DownloadFinished;
         this.EstimatedCompletion = DateTime.Now + e.EstimatedTimeRemaining;
     }
+
+    private static bool IsValidProgress(ulong completed, ulong total) =>
+        total > 0 &&
+        total <= MaximumPlausibleTransferSize &&
+        completed <= total;
 
     public void Dispose()
     {
