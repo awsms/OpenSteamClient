@@ -42,10 +42,14 @@
 
     <ScrollViewer>
         <StackPanel Margin="24" Spacing="18" MaxWidth="1000" HorizontalAlignment="Stretch">
-            <StackPanel Spacing="3">
-                <TextBlock Text="Downloads" FontSize="28" FontWeight="SemiBold"/>
-                <TextBlock Text="Download activity, disk usage and pending updates" Opacity="0.65"/>
-            </StackPanel>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                    <TextBlock Text="Downloads" FontSize="28" FontWeight="SemiBold"/>
+                    <TextBlock Text="Download activity, disk usage and pending updates" Opacity="0.65"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="{Binding GlobalPauseButtonText}"
+                        Command="{Binding ToggleAllDownloadsCommand}" VerticalAlignment="Center"/>
+            </Grid>
 
             <Border Classes="card">
                 <StackPanel Spacing="14">
@@ -56,10 +60,12 @@
                             <TextBlock Text="{Binding CurrentDownload.Name}" IsVisible="{Binding IsDownloading}"
                                        FontSize="16" FontWeight="SemiBold"/>
                         </StackPanel>
-                        <Border Grid.Column="1" IsVisible="{Binding IsDownloading}" Background="#283FAE49"
-                                CornerRadius="12" Padding="10,4" VerticalAlignment="Top">
-                            <TextBlock Text="DOWNLOADING" FontSize="11" FontWeight="Bold"/>
-                        </Border>
+                        <StackPanel Grid.Column="1" IsVisible="{Binding IsDownloading}" Orientation="Horizontal" Spacing="8">
+                            <Border Background="#283FAE49" CornerRadius="12" Padding="10,4" VerticalAlignment="Center">
+                                <TextBlock Text="DOWNLOADING" FontSize="11" FontWeight="Bold"/>
+                            </Border>
+                            <Button Content="Pause" Command="{Binding CurrentDownload.PauseCommand}"/>
+                        </StackPanel>
                     </Grid>
 
                     <StackPanel IsVisible="{Binding IsDownloading}" Spacing="6">
@@ -118,9 +124,10 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vmd:DownloadItemViewModel">
                             <Border Classes="download-row">
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
                                     <TextBlock Grid.Column="1" Text="Queued" Opacity="0.65"/>
+                                    <Button Grid.Column="2" Grid.RowSpan="2" Content="Pause" Command="{Binding PauseCommand}"/>
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12"
                                                 IsVisible="{Binding HasTransferDetails}">
                                         <TextBlock Text="{Binding DownloadSize, StringFormat='Download: {0}'}"/>
@@ -145,10 +152,11 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vmd:DownloadItemViewModel">
                             <Border Classes="download-row">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding ScheduledFor, StringFormat='Scheduled: {0:g}'}" Opacity="0.65"/>
+                                    <Button Grid.Column="2" Content="Start now" Command="{Binding ResumeCommand}"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -168,9 +176,10 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vmd:DownloadItemViewModel">
                             <Border Classes="download-row">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
                                     <TextBlock Grid.Column="1" Text="Waiting for Steam to assign a time" Opacity="0.65"/>
+                                    <Button Grid.Column="2" Content="Start now" Command="{Binding ResumeCommand}"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>

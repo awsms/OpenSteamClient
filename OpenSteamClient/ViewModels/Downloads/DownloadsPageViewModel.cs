@@ -6,6 +6,8 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using OpenSteamworks;
 using OpenSteamworks.Client.Config;
 using OpenSteamworks.Client.Enums;
 using OpenSteamworks.Client.Utils;
@@ -49,11 +51,20 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
     [ObservableProperty]
     private string _peakDiskRate;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GlobalPauseButtonText))]
+    private bool _downloadsPaused;
+
+    public string GlobalPauseButtonText => DownloadsPaused ? "Resume all" : "Pause all";
+
     private readonly DownloadsHelper _downloadManager;
+    private readonly AppManagerHelper _appManagerHelper;
     private readonly UserSettings _userSettings;
-    public DownloadsPageViewModel(DownloadsHelper downloadManager, UserSettings userSettings) {
+    public DownloadsPageViewModel(DownloadsHelper downloadManager, AppManagerHelper appManagerHelper, UserSettings userSettings) {
         this._userSettings = userSettings;
         this._downloadManager = downloadManager;
+        _appManagerHelper = appManagerHelper;
+        DownloadsPaused = !appManagerHelper.EnableDownloads;
         downloadManager.DownloadChanged += OnDownloadChanged;
         downloadManager.DownloadScheduleChanged += OnDownloadQueueChanged;
         UpdateRates(new());
@@ -71,7 +82,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         this.DownloadQueue.Clear();
         foreach (var newitem in e.QueuedApps)
         {
-            this.DownloadQueue.Add(new DownloadItemViewModel(_downloadManager, newitem));
+            this.DownloadQueue.Add(new DownloadItemViewModel(_downloadManager, _appManagerHelper, newitem));
         }
         OnPropertyChanged(nameof(HasQueuedDownloads));
 
@@ -80,7 +91,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         this.ScheduledDownloads.Clear();
         foreach (var newitem in e.ScheduledApps)
         {
-            this.ScheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, newitem.Key, newitem.Value));
+            this.ScheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, _appManagerHelper, newitem.Key, newitem.Value));
         }
         OnPropertyChanged(nameof(HasScheduledDownloads));
 
@@ -89,7 +100,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         this.UnscheduledDownloads.Clear();
         foreach (var newitem in e.UnscheduledApps)
         {
-            this.UnscheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, newitem));
+            this.UnscheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, _appManagerHelper, newitem));
         }
         OnPropertyChanged(nameof(HasUnscheduledDownloads));
     }
@@ -104,7 +115,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         if (downloadStats.DownloadingAppID != 0) {
             if (CurrentDownload?.AppID != downloadStats.DownloadingAppID) {
                 CurrentDownload?.Dispose();
-                CurrentDownload = new DownloadItemViewModel(_downloadManager, downloadStats.DownloadingAppID, listenForUpdates: false);
+                CurrentDownload = new DownloadItemViewModel(_downloadManager, _appManagerHelper, downloadStats.DownloadingAppID, listenForUpdates: false);
             }
 
             CurrentDownload.Update(downloadStats);
@@ -125,6 +136,14 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         CurrentDiskRate = DataUnitStrings.GetStringForDownloadSpeed(downloadStats.DiskRate, _userSettings.DownloadDataRateUnit);
         PeakDownloadRate = DataUnitStrings.GetStringForDownloadSpeed(PeakDownloadRateNum, _userSettings.DownloadDataRateUnit);
         PeakDiskRate = DataUnitStrings.GetStringForDownloadSpeed(PeakDiskRateNum, _userSettings.DownloadDataRateUnit);
+        DownloadsPaused = downloadStats.Paused || !_appManagerHelper.EnableDownloads;
+    }
+
+    [RelayCommand]
+    private void ToggleAllDownloads()
+    {
+        _appManagerHelper.EnableDownloads = DownloadsPaused;
+        DownloadsPaused = !_appManagerHelper.EnableDownloads;
     }
 
     private static void DisposeItems(IEnumerable<DownloadItemViewModel> items)

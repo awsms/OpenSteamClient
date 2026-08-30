@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using OpenSteamworks;
 using OpenSteamworks.Client.Config;
 using OpenSteamworks.Client.Enums;
@@ -50,11 +51,13 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisp
     private DateTime? _scheduledFor;
 
     private readonly DownloadsHelper _downloadsHelper;
+    private readonly AppManagerHelper _appManagerHelper;
     private readonly bool _listensForUpdates;
-    public DownloadItemViewModel(DownloadsHelper downloadsHelper, AppId_t appid, DateTime? scheduledFor = null, bool listenForUpdates = true) {
+    public DownloadItemViewModel(DownloadsHelper downloadsHelper, AppManagerHelper appManagerHelper, AppId_t appid, DateTime? scheduledFor = null, bool listenForUpdates = true) {
         AppID = appid;
         ScheduledFor = scheduledFor;
         this._downloadsHelper = downloadsHelper;
+        _appManagerHelper = appManagerHelper;
         _listensForUpdates = listenForUpdates;
         if (_listensForUpdates) {
             this._downloadsHelper.DownloadChanged += OnDownloadChanged;
@@ -105,6 +108,17 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisp
         total > 0 &&
         total <= MaximumPlausibleTransferSize &&
         completed <= total;
+
+    [RelayCommand]
+    private void Pause() =>
+        _appManagerHelper.ChangeAppDownloadQueuePlacement(AppID, EAppDownloadQueuePlacement.PriorityPaused);
+
+    [RelayCommand]
+    private void Resume()
+    {
+        _appManagerHelper.ChangeAppDownloadQueuePlacement(AppID, EAppDownloadQueuePlacement.PriorityUserInitiated);
+        _appManagerHelper.EnableDownloads = true;
+    }
 
     public void Dispose()
     {
