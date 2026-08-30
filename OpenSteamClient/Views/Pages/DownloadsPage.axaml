@@ -123,12 +123,23 @@
                 <ItemsControl ItemsSource="{Binding DownloadQueue}" IsVisible="{Binding HasQueuedDownloads}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vmd:DownloadItemViewModel">
-                            <Border Classes="download-row">
-                                <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                    <TextBlock Grid.Column="1" Text="Queued" Opacity="0.65"/>
-                                    <Button Grid.Column="2" Grid.RowSpan="2" Content="Pause" Command="{Binding PauseCommand}"/>
+                            <Border Classes="download-row" DragDrop.AllowDrop="True"
+                                    DragDrop.DragOver="QueueItem_DragOver" DragDrop.Drop="QueueItem_Drop">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8">
+                                    <Border Padding="8,3" Cursor="SizeAll" ToolTip.Tip="Drag to change priority"
+                                            PointerPressed="QueueDragHandle_PointerPressed">
+                                        <TextBlock Text="⋮⋮" FontWeight="Bold" Opacity="0.6"/>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Queued" Opacity="0.65" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="3" Grid.RowSpan="2" Content="↑ First" Command="{Binding MoveToTopCommand}"/>
+                                    <Button Grid.Column="4" Grid.RowSpan="2" Content="↑" ToolTip.Tip="Move up"
+                                            Command="{Binding MoveUpCommand}"/>
+                                    <Button Grid.Column="5" Grid.RowSpan="2" Content="↓" ToolTip.Tip="Move down"
+                                            Command="{Binding MoveDownCommand}"/>
+                                    <Button Grid.Column="6" Grid.RowSpan="2" Content="Pause" Command="{Binding PauseCommand}"/>
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12"
+                                                Grid.Column="1" Grid.ColumnSpan="2"
                                                 IsVisible="{Binding HasTransferDetails}">
                                         <TextBlock Text="{Binding DownloadSize, StringFormat='Download: {0}'}"/>
                                         <TextBlock Text="{Binding DiskSize, StringFormat='Disk: {0}'}"/>

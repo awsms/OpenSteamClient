@@ -8,10 +8,12 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenSteamworks;
+using OpenSteamworks.Data;
 using OpenSteamworks.Client.Config;
 using OpenSteamworks.Client.Enums;
 using OpenSteamworks.Client.Utils;
 using OpenSteamworks.Helpers;
+using OpenSteamworks.Generated;
 
 namespace OpenSteamClient.ViewModels.Downloads;
 
@@ -59,11 +61,13 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
 
     private readonly DownloadsHelper _downloadManager;
     private readonly AppManagerHelper _appManagerHelper;
+    private readonly IClientAppManager _clientAppManager;
     private readonly UserSettings _userSettings;
-    public DownloadsPageViewModel(DownloadsHelper downloadManager, AppManagerHelper appManagerHelper, UserSettings userSettings) {
+    public DownloadsPageViewModel(DownloadsHelper downloadManager, AppManagerHelper appManagerHelper, IClientAppManager clientAppManager, UserSettings userSettings) {
         this._userSettings = userSettings;
         this._downloadManager = downloadManager;
         _appManagerHelper = appManagerHelper;
+        _clientAppManager = clientAppManager;
         DownloadsPaused = !appManagerHelper.EnableDownloads;
         downloadManager.DownloadChanged += OnDownloadChanged;
         downloadManager.DownloadScheduleChanged += OnDownloadQueueChanged;
@@ -82,7 +86,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         this.DownloadQueue.Clear();
         foreach (var newitem in e.QueuedApps)
         {
-            this.DownloadQueue.Add(new DownloadItemViewModel(_downloadManager, _appManagerHelper, newitem));
+            this.DownloadQueue.Add(CreateDownloadItem(newitem));
         }
         OnPropertyChanged(nameof(HasQueuedDownloads));
 
@@ -91,7 +95,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         this.ScheduledDownloads.Clear();
         foreach (var newitem in e.ScheduledApps)
         {
-            this.ScheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, _appManagerHelper, newitem.Key, newitem.Value));
+            this.ScheduledDownloads.Add(CreateDownloadItem(newitem.Key, newitem.Value));
         }
         OnPropertyChanged(nameof(HasScheduledDownloads));
 
@@ -100,7 +104,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         this.UnscheduledDownloads.Clear();
         foreach (var newitem in e.UnscheduledApps)
         {
-            this.UnscheduledDownloads.Add(new DownloadItemViewModel(_downloadManager, _appManagerHelper, newitem));
+            this.UnscheduledDownloads.Add(CreateDownloadItem(newitem));
         }
         OnPropertyChanged(nameof(HasUnscheduledDownloads));
     }
@@ -115,7 +119,7 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         if (downloadStats.DownloadingAppID != 0) {
             if (CurrentDownload?.AppID != downloadStats.DownloadingAppID) {
                 CurrentDownload?.Dispose();
-                CurrentDownload = new DownloadItemViewModel(_downloadManager, _appManagerHelper, downloadStats.DownloadingAppID, listenForUpdates: false);
+                CurrentDownload = CreateDownloadItem(downloadStats.DownloadingAppID, listenForUpdates: false);
             }
 
             CurrentDownload.Update(downloadStats);
@@ -145,6 +149,29 @@ public partial class DownloadsPageViewModel : AvaloniaCommon.ViewModelBase, IDis
         _appManagerHelper.EnableDownloads = DownloadsPaused;
         DownloadsPaused = !_appManagerHelper.EnableDownloads;
     }
+
+    public void MoveDownloadBefore(DownloadItemViewModel source, DownloadItemViewModel target)
+    {
+        if (source.AppID == target.AppID) {
+            return;
+        }
+
+        var targetIndex = _clientAppManager.GetAppDownloadQueueIndex(target.AppID);
+        if (targetIndex >= 0) {
+            _clientAppManager.SetAppDownloadQueueIndex(source.AppID, targetIndex);
+        }
+    }
+
+    public void MoveDownloadBefore(string sourceAppID, DownloadItemViewModel target)
+    {
+        var source = DownloadQueue.FirstOrDefault(item => item.AppID.ToString() == sourceAppID);
+        if (source is not null) {
+            MoveDownloadBefore(source, target);
+        }
+    }
+
+    private DownloadItemViewModel CreateDownloadItem(AppId_t appID, DateTime? scheduledFor = null, bool listenForUpdates = true) =>
+        new(_downloadManager, _appManagerHelper, _clientAppManager, appID, scheduledFor, listenForUpdates);
 
     private static void DisposeItems(IEnumerable<DownloadItemViewModel> items)
     {

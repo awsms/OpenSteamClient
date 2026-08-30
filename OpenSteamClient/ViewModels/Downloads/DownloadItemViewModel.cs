@@ -11,6 +11,7 @@ using OpenSteamworks.Data.Structs;
 using OpenSteamworks.Data;
 using OpenSteamClient.DI;
 using OpenSteamworks.Data.Enums;
+using OpenSteamworks.Generated;
 
 namespace OpenSteamClient.ViewModels.Downloads;
 
@@ -52,12 +53,14 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisp
 
     private readonly DownloadsHelper _downloadsHelper;
     private readonly AppManagerHelper _appManagerHelper;
+    private readonly IClientAppManager _clientAppManager;
     private readonly bool _listensForUpdates;
-    public DownloadItemViewModel(DownloadsHelper downloadsHelper, AppManagerHelper appManagerHelper, AppId_t appid, DateTime? scheduledFor = null, bool listenForUpdates = true) {
+    public DownloadItemViewModel(DownloadsHelper downloadsHelper, AppManagerHelper appManagerHelper, IClientAppManager clientAppManager, AppId_t appid, DateTime? scheduledFor = null, bool listenForUpdates = true) {
         AppID = appid;
         ScheduledFor = scheduledFor;
         this._downloadsHelper = downloadsHelper;
         _appManagerHelper = appManagerHelper;
+        _clientAppManager = clientAppManager;
         _listensForUpdates = listenForUpdates;
         if (_listensForUpdates) {
             this._downloadsHelper.DownloadChanged += OnDownloadChanged;
@@ -118,6 +121,27 @@ public partial class DownloadItemViewModel : AvaloniaCommon.ViewModelBase, IDisp
     {
         _appManagerHelper.ChangeAppDownloadQueuePlacement(AppID, EAppDownloadQueuePlacement.PriorityUserInitiated);
         _appManagerHelper.EnableDownloads = true;
+    }
+
+    [RelayCommand]
+    private void MoveToTop() => _clientAppManager.SetAppDownloadQueueIndex(AppID, 0);
+
+    [RelayCommand]
+    private void MoveUp()
+    {
+        var currentIndex = _clientAppManager.GetAppDownloadQueueIndex(AppID);
+        if (currentIndex > 0) {
+            _clientAppManager.SetAppDownloadQueueIndex(AppID, currentIndex - 1);
+        }
+    }
+
+    [RelayCommand]
+    private void MoveDown()
+    {
+        var currentIndex = _clientAppManager.GetAppDownloadQueueIndex(AppID);
+        if (currentIndex >= 0 && currentIndex + 1 < _clientAppManager.GetNumAppsInDownloadQueue()) {
+            _clientAppManager.SetAppDownloadQueueIndex(AppID, currentIndex + 1);
+        }
     }
 
     public void Dispose()
