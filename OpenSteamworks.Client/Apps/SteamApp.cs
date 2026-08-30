@@ -355,7 +355,8 @@ internal sealed class SteamApp : ObservableObject, IApp, IAppInfoAccessInterface
 
     public override string ToString() => $"SteamApp_{ID}";
 
-    EAppError IAppInstallInterface.Install(LibraryFolder_t folder) => _steamClient.AppManagerHelper.InstallApp(AppID, folder);
+    EAppError IAppInstallInterface.Install(LibraryFolder_t folder) =>
+        _steamClient.IClientAppManager.InstallApp(AppID, folder, false);
     public EAppError Uninstall() => _steamClient.AppManagerHelper.UninstallApp(AppID);
     public bool IsInstalled => _steamClient.AppManagerHelper.IsAppInstalled(AppID);
     public void PauseInstall() => _steamClient.AppManagerHelper.EnableDownloads = false;
