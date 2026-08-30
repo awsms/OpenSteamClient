@@ -490,20 +490,25 @@ public partial class HTMLSurface : UserControl
 
 		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 		OpenSteamworks.Callbacks.CallResult<HTML_BrowserReady_t> result;
+		SteamAPICall<HTML_BrowserReady_t> callHandle = default;
 		try
 		{
 			result = await client.CallbackManager.RunAsyncCall(
-				() => this.surface.CreateBrowser(userAgent, customCSS), timeout.Token);
+				() => callHandle = this.surface.CreateBrowser(userAgent, customCSS), timeout.Token);
+		}
+		catch (Exception exception) when (exception.Message == "API call not completed")
+		{
+			result = await RetryGetBrowserResultAsync(callHandle, exception, timeout.Token);
 		}
 		catch
 		{
-			this.htmlHost.Stop();
+			StopHTMLHostAfterFailure();
 			throw;
 		}
 
         if (result.Failed)
         {
-            this.htmlHost.Stop();
+            StopHTMLHostAfterFailure();
             throw new InvalidOperationException("CreateBrowser failed due to CallResult failure: " + result.FailureReason);
         }
 
@@ -515,6 +520,46 @@ public partial class HTMLSurface : UserControl
 
         return result.Data.unBrowserHandle;
     }
+
+	private async Task<CallResult<HTML_BrowserReady_t>> RetryGetBrowserResultAsync(
+		SteamAPICall<HTML_BrowserReady_t> callHandle,
+		Exception originalException,
+		CancellationToken cancellationToken)
+	{
+		const int callbackId = 4501;
+		var callbackSize = Marshal.SizeOf<HTML_BrowserReady_t>();
+		var callbackData = new byte[callbackSize];
+
+		for (var attempt = 0; attempt < 20; attempt++)
+		{
+			if (this.client.IClientUtils.GetAPICallResult(
+				callHandle, callbackData, callbackSize, callbackId, out var failed))
+			{
+				var data = MemoryMarshal.Read<HTML_BrowserReady_t>(callbackData);
+				return new CallResult<HTML_BrowserReady_t>(
+					failed, this.client.IClientUtils.GetAPICallFailureReason(callHandle), data);
+			}
+
+			await Task.Delay(25, cancellationToken);
+		}
+
+		var failureReason = this.client.IClientUtils.GetAPICallFailureReason(callHandle);
+		StopHTMLHostAfterFailure();
+		throw new InvalidOperationException(
+			$"CreateBrowser result remained unavailable ({failureReason}).", originalException);
+	}
+
+	private void StopHTMLHostAfterFailure()
+	{
+		try
+		{
+			this.htmlHost.Stop();
+		}
+		catch (InvalidOperationException)
+		{
+			// The steamwebhelper watcher may be replacing an exited process.
+		}
+	}
 
     public void RemoveBrowser()
     {

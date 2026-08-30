@@ -38,31 +38,31 @@ public class SteamHTML : IClientLifetime
         {
             logger.Info("Creating steamwebhelper process");
 
-            CurrentHTMLHost = new Process();
-            CurrentHTMLHost.StartInfo.WorkingDirectory = Path.Combine(installManager.InstallDir, "ubuntu12_64");
-            CurrentHTMLHost.StartInfo.FileName = Path.Combine(installManager.InstallDir, "ubuntu12_64", "steamwebhelper");
-            CurrentHTMLHost.StartInfo.EnvironmentVariables["LD_LIBRARY_PATH"] = $".:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}";
-            CurrentHTMLHost.StartInfo.ArgumentList.Add("--disable-seccomp-filter-sandbox");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add("-lang=fi_FI");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-cachedir={Path.Combine(installManager.CacheDir, "htmlcache")}");
+            var htmlHost = new Process();
+            htmlHost.StartInfo.WorkingDirectory = Path.Combine(installManager.InstallDir, "ubuntu12_64");
+            htmlHost.StartInfo.FileName = Path.Combine(installManager.InstallDir, "ubuntu12_64", "steamwebhelper");
+            htmlHost.StartInfo.EnvironmentVariables["LD_LIBRARY_PATH"] = $".:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}";
+            htmlHost.StartInfo.ArgumentList.Add("--disable-seccomp-filter-sandbox");
+            htmlHost.StartInfo.ArgumentList.Add("-lang=fi_FI");
+            htmlHost.StartInfo.ArgumentList.Add($"-cachedir={Path.Combine(installManager.CacheDir, "htmlcache")}");
             // This could technically be improved by reading from the steam.pid file, but no need since this code always assumes we're the master
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-steampid={Environment.ProcessId}");
+            htmlHost.StartInfo.ArgumentList.Add($"-steampid={Environment.ProcessId}");
 
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-buildid={Generated.VersionInfo.STEAM_MANIFEST_VERSION}");
+            htmlHost.StartInfo.ArgumentList.Add($"-buildid={Generated.VersionInfo.STEAM_MANIFEST_VERSION}");
 
             // Don't know our SteamID at this point.
-            CurrentHTMLHost.StartInfo.ArgumentList.Add("-steamid=0");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-logdir={installManager.LogsDir}");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-uimode={(int)steamClient.IClientUtils.GetCurrentUIMode()}");
+            htmlHost.StartInfo.ArgumentList.Add("-steamid=0");
+            htmlHost.StartInfo.ArgumentList.Add($"-logdir={installManager.LogsDir}");
+            htmlHost.StartInfo.ArgumentList.Add($"-uimode={(int)steamClient.IClientUtils.GetCurrentUIMode()}");
 
             // We don't track this.
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-startcount=0");
+            htmlHost.StartInfo.ArgumentList.Add($"-startcount=0");
 
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-steamuniverse={steamClient.IClientUtils.GetConnectedUniverse()}");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-realm={steamClient.IClientUtils.GetSteamRealm()}");
+            htmlHost.StartInfo.ArgumentList.Add($"-steamuniverse={steamClient.IClientUtils.GetConnectedUniverse()}");
+            htmlHost.StartInfo.ArgumentList.Add($"-realm={steamClient.IClientUtils.GetSteamRealm()}");
 
             // Doesn't exist, but we pass it anyway.
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-clientui={Path.Combine(installManager.InstallDir, "clientui")}");
+            htmlHost.StartInfo.ArgumentList.Add($"-clientui={Path.Combine(installManager.InstallDir, "clientui")}");
 
             string steampath;
             if (OperatingSystem.IsLinux())
@@ -74,23 +74,23 @@ public class SteamHTML : IClientLifetime
                 steampath = Environment.ProcessPath!;
             }
 
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-steampath={steampath}");
+            htmlHost.StartInfo.ArgumentList.Add($"-steampath={steampath}");
 
             // No idea what this means or does.
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-launcher=0");
+            htmlHost.StartInfo.ArgumentList.Add($"-launcher=0");
 
             // This should only be passed if we're in debug mode, but that info isn't really passed through to us in any way.
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-dev");
+            htmlHost.StartInfo.ArgumentList.Add($"-dev");
 
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"-no-restart-on-ui-mode-change");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--enable-media-stream");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--enable-smooth-scrolling");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--password-store=basic");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--log-file={Path.Combine(installManager.LogsDir, "cef_log.txt")}");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--disable-quick-menu");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--disable-features=SameSiteByDefaultCookies");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--enable-blink-features=ResizeObserver,Worklet,AudioWorklet");
-            CurrentHTMLHost.StartInfo.ArgumentList.Add($"--disable-blink-features=Badging");
+            htmlHost.StartInfo.ArgumentList.Add($"-no-restart-on-ui-mode-change");
+            htmlHost.StartInfo.ArgumentList.Add($"--enable-media-stream");
+            htmlHost.StartInfo.ArgumentList.Add($"--enable-smooth-scrolling");
+            htmlHost.StartInfo.ArgumentList.Add($"--password-store=basic");
+            htmlHost.StartInfo.ArgumentList.Add($"--log-file={Path.Combine(installManager.LogsDir, "cef_log.txt")}");
+            htmlHost.StartInfo.ArgumentList.Add($"--disable-quick-menu");
+            htmlHost.StartInfo.ArgumentList.Add($"--disable-features=SameSiteByDefaultCookies");
+            htmlHost.StartInfo.ArgumentList.Add($"--enable-blink-features=ResizeObserver,Worklet,AudioWorklet");
+            htmlHost.StartInfo.ArgumentList.Add($"--disable-blink-features=Badging");
 
             // // Necessary for hooking some funcs (to get it to connect to master steam process)
             // CurrentHTMLHost.StartInfo.Environment.Add("OPENSTEAM_EXE_PATH", steampath);
@@ -128,7 +128,8 @@ public class SteamHTML : IClientLifetime
             // CurrentHTMLHost.StartInfo.ArgumentList.Add("-cef-verbose-logging 4");
 
             logger.Info("Starting steamwebhelper process");
-            CurrentHTMLHost.Start();
+            htmlHost.Start();
+            CurrentHTMLHost = htmlHost;
 
             if (WatcherThread == null)
             {
@@ -137,15 +138,25 @@ public class SteamHTML : IClientLifetime
                 {
                     do
                     {
-                        if (CurrentHTMLHost.HasExited)
+                        Process? currentHost;
+                        lock (CurrentHTMLHostLock)
                         {
-                            logger.Error($"steamwebhelper crashed (exit code {CurrentHTMLHost.ExitCode})! Restarting in 1s.");
+                            currentHost = CurrentHTMLHost;
+                        }
+
+                        if (currentHost?.HasExited == true)
+                        {
+                            logger.Error($"steamwebhelper crashed (exit code {currentHost.ExitCode})! Restarting in 1s.");
                             Thread.Sleep(1000);
                             StartHTMLHost();
                         }
                         Thread.Sleep(50);
                     } while (!ShouldStop);
-                    CurrentHTMLHost.Kill();
+                    lock (CurrentHTMLHostLock)
+                    {
+                        if (CurrentHTMLHost is { HasExited: false })
+                            CurrentHTMLHost.Kill();
+                    }
                     WatcherThread = null;
                 });
 
