@@ -92,6 +92,17 @@ public class SteamHTML : IClientLifetime
             htmlHost.StartInfo.ArgumentList.Add($"--enable-blink-features=ResizeObserver,Worklet,AudioWorklet");
             htmlHost.StartInfo.ArgumentList.Add($"--disable-blink-features=Badging");
 
+            if (!globalSettings.WebhelperGPUAcceleration)
+            {
+                htmlHost.StartInfo.ArgumentList.Add("--disable-gpu");
+                htmlHost.StartInfo.ArgumentList.Add("--disable-gpu-compositing");
+            }
+
+            if (!globalSettings.WebhelperGPUAcceleration || !globalSettings.WebhelperGPUVideoDecode)
+            {
+                htmlHost.StartInfo.ArgumentList.Add("--disable-accelerated-video-decode");
+            }
+
             // // Necessary for hooking some funcs (to get it to connect to master steam process)
             // CurrentHTMLHost.StartInfo.Environment.Add("OPENSTEAM_EXE_PATH", steampath);
             // CurrentHTMLHost.StartInfo.Environment.Add("OPENSTEAM_PID", Environment.ProcessId.ToString());

@@ -3,6 +3,12 @@
     "LanguageFriendlyName": "Finnish",
     "TranslationKeys": {
         "#SettingsWindow_YourCurrentLanguage": "Tämänhetkinen kielesi on {0} ({1})",
+        "#SettingsWindow_OpenSteamClient_RenderingHeader": "Renderöinti",
+        "#SettingsWindow_OpenSteamClient_ClientHardwareAcceleration": "Käytä OpenSteamClientin laitteistokiihdytystä",
+        "#SettingsWindow_OpenSteamClient_ClientHardwareAccelerationDesc": "Renderöi käyttöliittymä näytönohjaimella. Poistaminen vähentää VRAM-käyttöä mutta lisää suorittimen käyttöä.",
+        "#SettingsWindow_OpenSteamClient_WebHardwareAcceleration": "Käytä verkkosivujen laitteistokiihdytystä",
+        "#SettingsWindow_OpenSteamClient_WebHardwareAccelerationDesc": "Renderöi Kauppa- ja Yhteisö-sivut näytönohjaimella. Poistaminen vähentää VRAM-käyttöä mutta lisää suorittimen käyttöä.",
+        "#SettingsWindow_OpenSteamClient_RestartRequired": "Renderöintiasetusten muutokset vaativat uudelleenkäynnistyksen.",
         "#LanguageNameTranslated": "Suomi",
         "#InterfaceList_Title": "Rajapintalista",
         "#LoginWindow_LoginText": "Kirjaudu Steam-tilillä.",

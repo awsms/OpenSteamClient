@@ -172,6 +172,42 @@ public partial class SettingsWindowViewModel : ViewModelBase
         set => _configManager.Get<UserSettings>().LoginToFriendsNetworkAutomatically = value;
     }
 
+    // OpenSteamClient
+
+    public bool ClientHardwareAcceleration
+    {
+        get => _configManager.Get<GlobalSettings>().ClientHardwareAcceleration;
+        set
+        {
+            var settings = _configManager.Get<GlobalSettings>();
+            if (settings.ClientHardwareAcceleration == value)
+            {
+                return;
+            }
+
+            settings.ClientHardwareAcceleration = value;
+            _configManager.Save(settings);
+            OnPropertyChanged();
+        }
+    }
+
+    public bool WebhelperHardwareAcceleration
+    {
+        get => _configManager.Get<GlobalSettings>().WebhelperGPUAcceleration;
+        set
+        {
+            var settings = _configManager.Get<GlobalSettings>();
+            if (settings.WebhelperGPUAcceleration == value)
+            {
+                return;
+            }
+
+            settings.WebhelperGPUAcceleration = value;
+            _configManager.Save(settings);
+            OnPropertyChanged();
+        }
+    }
+
     // Localization
     public ObservableCollectionEx<IDNameViewModel> Languages { get; } = new();
 

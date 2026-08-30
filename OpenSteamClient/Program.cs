@@ -3,6 +3,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using AvaloniaCommon;
+using OpenSteamworks.Client.Config;
+using OpenSteamworks.Client.Managers;
 
 namespace OpenSteamClient;
 
@@ -54,9 +56,33 @@ public static class Program
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<AvaloniaApp>()
+    {
+        var builder = AppBuilder.Configure<AvaloniaApp>()
             .UsePlatformDetect()
             .WithInterFont()
             .UseSkia()
             .LogToTrace();
+
+        var settings = GlobalSettings.LoadForStartup(new InstallManager());
+        if (!settings.ClientHardwareAcceleration)
+        {
+            if (OperatingSystem.IsLinux())
+            {
+                builder = builder.With(new X11PlatformOptions
+                {
+                    RenderingMode = [X11RenderingMode.Software],
+                    UseRetainedFramebuffer = false,
+                });
+            }
+            else if (OperatingSystem.IsWindows())
+            {
+                builder = builder.With(new Win32PlatformOptions
+                {
+                    RenderingMode = [Win32RenderingMode.Software],
+                });
+            }
+        }
+
+        return builder;
+    }
 }

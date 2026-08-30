@@ -72,6 +72,21 @@
                 </ComboBox>
             </StackPanel>
         </TabItem>
+        <TabItem Header="OpenSteamClient">
+            <ScrollViewer>
+                <StackPanel Margin="12" Spacing="8">
+                    <TextBlock FontSize="18" FontWeight="SemiBold" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_RenderingHeader"/>
+
+                    <CheckBox IsChecked="{Binding ClientHardwareAcceleration}" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_ClientHardwareAcceleration"/>
+                    <TextBlock Margin="24,0,0,8" TextWrapping="Wrap" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_ClientHardwareAccelerationDesc"/>
+
+                    <CheckBox IsChecked="{Binding WebhelperHardwareAcceleration}" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_WebHardwareAcceleration"/>
+                    <TextBlock Margin="24,0,0,8" TextWrapping="Wrap" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_WebHardwareAccelerationDesc"/>
+
+                    <TextBlock FontStyle="Italic" c:Translatable.TranslationKey="#SettingsWindow_OpenSteamClient_RestartRequired"/>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
     </TabControl>
 
 </Window>

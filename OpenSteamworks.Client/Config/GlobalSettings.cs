@@ -1,5 +1,7 @@
 using OpenSteamworks.Data.Enums;
 using OpenSteamworks.Client.Config.Attributes;
+using OpenSteamworks.Client.Managers;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
 namespace OpenSteamworks.Client.Config;
@@ -9,6 +11,31 @@ public class GlobalSettings: IConfigFile<GlobalSettings> {
     static string IConfigFile<GlobalSettings>.ConfigName => "GlobalSettings_001";
     static bool IConfigFile<GlobalSettings>.PerUser => false;
     static bool IConfigFile<GlobalSettings>.AlwaysSave => false;
+
+    public static GlobalSettings LoadForStartup(InstallManager installManager)
+    {
+        var path = Path.Combine(installManager.ConfigDir, "GlobalSettings_001.json");
+        if (!File.Exists(path) || new FileInfo(path).Length == 0)
+        {
+            return new();
+        }
+
+        try
+        {
+            using var stream = File.OpenRead(path);
+            return JsonSerializer.Deserialize(stream, ConfigJsonContext.Default.GlobalSettings) ?? new();
+        }
+        catch (Exception exception) when (exception is IOException or JsonException)
+        {
+            Console.Error.WriteLine($"Failed to load startup rendering settings: {exception.Message}");
+            return new();
+        }
+    }
+
+    [ConfigName("Enable client hardware acceleration", "#GlobalSettings_ClientHardwareAcceleration")]
+    [ConfigDescription("Renders the OpenSteamClient interface using the GPU. Requires a restart.", "#GlobalSettings_ClientHardwareAccelerationDesc")]
+    [ConfigCategory("OpenSteamClient", "#GlobalSettings_Category_OpenSteamClient")]
+    public bool ClientHardwareAcceleration { get; set; } = true;
     
     [ConfigName("Enable Webhelper", "#GlobalSettings_EnableWebHelper")]
     [ConfigDescription("Enables/disables Webhelper. Required for some games and for browsing the store and community pages in-client. 100% functionality is not guaranteed.", "#GlobalSettings_EnableWebHelperDesc")]

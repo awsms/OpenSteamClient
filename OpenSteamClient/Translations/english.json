@@ -3,6 +3,12 @@
     "LanguageFriendlyName": "English",
     "TranslationKeys": {
         "#SettingsWindow_YourCurrentLanguage": "Your current language is {0} ({1})",
+        "#SettingsWindow_OpenSteamClient_RenderingHeader": "Rendering",
+        "#SettingsWindow_OpenSteamClient_ClientHardwareAcceleration": "Use hardware acceleration for OpenSteamClient",
+        "#SettingsWindow_OpenSteamClient_ClientHardwareAccelerationDesc": "Render the client interface using the GPU. Disabling this reduces VRAM usage but increases CPU usage.",
+        "#SettingsWindow_OpenSteamClient_WebHardwareAcceleration": "Use hardware acceleration for web pages",
+        "#SettingsWindow_OpenSteamClient_WebHardwareAccelerationDesc": "Render Store and Community pages using the GPU. Disabling this reduces VRAM usage but increases CPU usage.",
+        "#SettingsWindow_OpenSteamClient_RestartRequired": "Changes to rendering settings require a restart.",
         "#LanguageNameTranslated": "English",
         "#InterfaceList_Title": "Interface list",
         "#LoginWindow_LoginText": "Login with a Steam account.",
