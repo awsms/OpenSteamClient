@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using AvaloniaCommon;
 using OpenSteamClient.Extensions;
 using OpenSteamClient.Translation;
 using OpenSteamClient.Views;
@@ -35,6 +37,7 @@ public partial class SelectInstallDirectoryDialogViewModel : AvaloniaCommon.View
         TextBlockText = string.Format(tm.GetTranslationForKey("#SelectInstallDirectoryDialog_SelectLibraryFolder"), app.Name);
 
         LibraryFolders = new(LibraryFolderViewModel.GetLibraryFolders(appManagerHelper));
+        SelectedLibraryFolder = LibraryFolders.FirstOrDefault();
     }
 
     public void OnCancelClicked() {
@@ -42,14 +45,26 @@ public partial class SelectInstallDirectoryDialogViewModel : AvaloniaCommon.View
     }
 
     public void OnInstallClicked() {
+        if (SelectedLibraryFolder is null)
+        {
+            MessageBox.Error("Installation failed", "No mounted Steam library folder is available.");
+            return;
+        }
+
         if (app is IAppInstallInterface installInterface)
         {
-            Console.WriteLine("Installing " + app.Name + " to " + SelectedLibraryFolder!.Path);
-            installInterface.Install(SelectedLibraryFolder!.ID);
+            Console.WriteLine("Installing " + app.Name + " to " + SelectedLibraryFolder.Path);
+            var error = installInterface.Install(SelectedLibraryFolder.ID);
+            if (error != OpenSteamworks.Data.Enums.EAppError.NoError)
+            {
+                MessageBox.Error("Installation failed", $"Failed to install {app.Name}: {error}");
+                return;
+            }
         }
         else
         {
-            Console.WriteLine("App does not support install! (app: " + app.ToString() + " )");
+            MessageBox.Error("Installation failed", $"{app.Name} does not support installation.");
+            return;
         }
 
         dialog.Close();

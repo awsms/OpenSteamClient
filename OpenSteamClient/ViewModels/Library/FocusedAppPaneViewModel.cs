@@ -27,8 +27,10 @@ using OpenSteamworks.Utils;
 using SkiaSharp;
 using AvaloniaCommon;
 using OpenSteamClient.DI;
+using OpenSteamClient.Translation;
 using OpenSteamworks.Client.Apps.Assets;
 using OpenSteamworks.Data.KeyValue;
+using OpenSteamworks.Helpers;
 
 namespace OpenSteamClient.ViewModels.Library;
 
@@ -300,7 +302,11 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
         if (App is IAppInstallInterface installInterface)
         {
             SelectInstallDirectoryDialog dialog = new();
-            dialog.DataContext = AvaloniaApp.Container.Construct<SelectInstallDirectoryDialogViewModel>(dialog, installInterface);
+            dialog.DataContext = new SelectInstallDirectoryDialogViewModel(
+                AvaloniaApp.Container.Get<AppManagerHelper>(),
+                AvaloniaApp.Container.Get<TranslationManager>(),
+                dialog,
+                installInterface);
 
             AvaloniaApp.Current?.TryShowDialog(dialog);
         }
