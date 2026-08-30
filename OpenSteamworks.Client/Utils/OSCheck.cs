@@ -16,13 +16,34 @@ public static class OSCheck {
 
         try
         {
-            var lines = File.ReadLines("/etc/os-release");
-            var id = lines.FirstOrDefault(l => l.StartsWith("ID="));
-            if (id != null) {
-                return id.Replace("ID=", string.Empty) == "arch";
+            var osReleasePath = File.Exists("/etc/os-release")
+                ? "/etc/os-release"
+                : "/usr/lib/os-release";
+
+            foreach (var line in File.ReadLines(osReleasePath))
+            {
+                var separatorIndex = line.IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    continue;
+                }
+
+                var key = line[..separatorIndex].Trim();
+                var value = line[(separatorIndex + 1)..].Trim().Trim('"', '\'');
+                if (key == "ID" && value.Equals("arch", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (key == "ID_LIKE" && value
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Contains("arch", StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
         }
-        catch (System.Exception)
+        catch (Exception)
         {
             return false;
         }

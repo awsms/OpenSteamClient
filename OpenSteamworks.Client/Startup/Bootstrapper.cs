@@ -150,6 +150,16 @@ public class Bootstrapper {
             progressHandler = new Progress<OperationProgress>();
         }
 
+        // Linux bootstrap prepares the runtime environment and then replaces this
+        // process with execvp. All install work was completed before that re-exec,
+        // so do not repeat verification, warnings and file operations afterward.
+        if (OperatingSystem.IsLinux() &&
+            UtilityFunctions.GetEnvironmentVariable("OPENSTEAM_RAN_EXECVP") == "1")
+        {
+            logger.Info("Bootstrap already completed before re-exec; continuing startup");
+            return;
+        }
+
         progressHandler.Report(new("Bootstrapping"));
 
         if (OperatingSystem.IsWindows()) {
