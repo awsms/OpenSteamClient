@@ -15,6 +15,7 @@ using OpenSteamworks.Callbacks.Structs;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using OpenSteamClient.DI;
+using OpenSteamClient.Logging;
 
 namespace OpenSteamClient.Controls;
 
@@ -90,6 +91,7 @@ public partial class BaseWebPage : BasePage
     private readonly Button openDevToolsButton;
     private readonly TextBox currentURLTextBox;
     private bool hasLoaded = false;
+    private bool callbacksRegistered = false;
 
     public BaseWebPage() : base()
     {
@@ -142,25 +144,28 @@ public partial class BaseWebPage : BasePage
         this.DetachedFromVisualTree += BaseWebPage_DetachedFromVisualTree;
     }
 
-    private void OnHTML_CanGoBackAndForward_t(ICallbackHandler handler, HTML_CanGoBackAndForward_t data)
+    private void OnHTML_CanGoBackAndForward_t(ICallbackHandler handler, in HTML_CanGoBackAndForward_t data)
     {
         if (this.webviewControl != null && this.webviewControl.BrowserHandle == data.unBrowserHandle)
         {
+            var canGoBack = data.bCanGoBack;
+            var canGoForward = data.bCanGoForward;
             Dispatcher.UIThread.Invoke(() =>
             {
-                prevButton.IsEnabled = data.bCanGoBack;
-                nextButton.IsEnabled = data.bCanGoForward;
+                prevButton.IsEnabled = canGoBack;
+                nextButton.IsEnabled = canGoForward;
             });
         }
     }
 
-    private void OnHTML_URLChanged_t(ICallbackHandler handler, HTML_URLChanged_t data)
+    private void OnHTML_URLChanged_t(ICallbackHandler handler, in HTML_URLChanged_t data)
     {
         if (this.webviewControl != null && this.webviewControl.BrowserHandle == data.unBrowserHandle)
         {
+            var url = data.pchURL;
             Dispatcher.UIThread.Invoke(() =>
             {
-                currentURLTextBox.Text = data.pchURL;
+                currentURLTextBox.Text = url;
             });
         }
     }
@@ -185,16 +190,44 @@ public partial class BaseWebPage : BasePage
         this.openDevToolsButton.Command = new RelayCommand(this.webviewControl.OpenDevTools);
 
         var callbackManager = AvaloniaApp.Container.Get<CallbackManager>();
-        callbackManager.Register<HTML_CanGoBackAndForward_t>(OnHTML_CanGoBackAndForward_t);
-        callbackManager.Register<HTML_URLChanged_t>(OnHTML_URLChanged_t);
-
-        await this.webviewControl.CreateBrowserAsync(this.UserAgent, this.CustomCSS);
-
-        this.webviewControl.LoadURL(this.URL);
-
-        if (SetSteamCookies)
+        if (!callbacksRegistered)
         {
-            await this.webviewControl.SetSteamCookies();
+            callbackManager.Register<HTML_CanGoBackAndForward_t>(OnHTML_CanGoBackAndForward_t);
+            callbackManager.Register<HTML_URLChanged_t>(OnHTML_URLChanged_t);
+            callbacksRegistered = true;
+        }
+
+        try
+        {
+            await this.webviewControl.CreateBrowserAsync(this.UserAgent, this.CustomCSS);
+            this.webviewControl.LoadURL(this.URL);
+
+            if (SetSteamCookies)
+            {
+                await this.webviewControl.SetSteamCookies();
+            }
+        }
+        catch (Exception exception)
+        {
+            OpenSteamworks.Client.Logger.GeneralLogger.Error("Failed to initialize web page:");
+            OpenSteamworks.Client.Logger.GeneralLogger.Error(exception);
+
+            try
+            {
+                this.webviewControl.RemoveBrowser();
+            }
+            catch (Exception cleanupException)
+            {
+                OpenSteamworks.Client.Logger.GeneralLogger.Error("Failed to clean up web page after initialization failure:");
+                OpenSteamworks.Client.Logger.GeneralLogger.Error(cleanupException);
+            }
+
+            this.webviewControl = null;
+            this.webviewContainer.Content = new TextBlock
+            {
+                Text = "The web page could not be loaded. Navigate away and try again."
+            };
+            hasLoaded = false;
         }
     }
 

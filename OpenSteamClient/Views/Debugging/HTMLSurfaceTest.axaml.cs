@@ -39,13 +39,14 @@ public partial class HTMLSurfaceTest : Window
         this.client.IClientHTMLSurface.LoadURL(handle, url, null);
     }
 
-    private void OnHTML_ChangedTitle_t(ICallbackHandler handler, HTML_ChangedTitle_t data)
+    private void OnHTML_ChangedTitle_t(ICallbackHandler handler, in HTML_ChangedTitle_t data)
     {
         if (surfaceControl.BrowserHandle == data.unBrowserHandle)
         {
+            var title = data.pchTitle;
             Dispatcher.UIThread.InvokeAsync(() =>
             {
-                this.Title = data.pchTitle;
+                this.Title = title;
             });
         }
     }

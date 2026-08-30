@@ -368,13 +368,13 @@ public class LoginManager : IClientLifetime
 
     private bool isLoggingOn = false;
     private EResult? loginFinishResult;
-    public void OnSteamServerConnectFailure(ICallbackHandler handler, SteamServerConnectFailure_t failure) {
+    public void OnSteamServerConnectFailure(ICallbackHandler handler, in SteamServerConnectFailure_t failure) {
         if (isLoggingOn) {
             loginFinishResult = failure.m_EResult;
         }
     }
 
-    public void OnSteamServersDisconnected(ICallbackHandler handler, SteamServersDisconnected_t disconnect) {
+    public void OnSteamServersDisconnected(ICallbackHandler handler, in SteamServersDisconnected_t disconnect) {
         if (CurrentUser != null) {
             if (disconnect.m_EResult == EResult.OK) {
                 OnLoggedOff(new LoggedOffEventArgs(CurrentUser, disconnect.m_EResult));
@@ -383,7 +383,7 @@ public class LoginManager : IClientLifetime
     }
 
 
-    public void OnPostLogonState(ICallbackHandler handler, PostLogonState_t stateUpdate) {
+    public void OnPostLogonState(ICallbackHandler handler, in PostLogonState_t stateUpdate) {
         if (isLoggingOn) {
             if (stateUpdate.hasAppInfo == 1 && stateUpdate.connectedToCMs == 1) {
 				loginProgress?.Report(new(string.Empty, string.Empty, 100));

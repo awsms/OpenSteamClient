@@ -306,7 +306,7 @@ public partial class HTMLSurface : UserControl
         this.GetObservable(BoundsProperty).Subscribe(new AnonymousObserver<Rect>(BoundsChange));
     }
 
-    private void OnHTML_SetCursor(ICallbackHandler handler, HTML_SetCursor_t setCursor)
+    private void OnHTML_SetCursor(ICallbackHandler handler, in HTML_SetCursor_t setCursor)
     {
         if (setCursor.unBrowserHandle == BrowserHandle)
         {
@@ -369,7 +369,7 @@ public partial class HTMLSurface : UserControl
 
     Stopwatch paintUpdateDataTime = new();
     Stopwatch forceRedrawTime = new();
-    private void OnHTML_NeedsPaint(ICallbackHandler handler, HTML_NeedsPaint_t paintEvent)
+    private void OnHTML_NeedsPaint(ICallbackHandler handler, in HTML_NeedsPaint_t paintEvent)
     {
         if (paintEvent.unBrowserHandle == this.BrowserHandle)
         {
@@ -398,19 +398,20 @@ public partial class HTMLSurface : UserControl
     }
     #endif
 
-    private void OnHTML_ShowToolTip_t(ICallbackHandler handler, HTML_ShowToolTip_t ev)
+    private void OnHTML_ShowToolTip_t(ICallbackHandler handler, in HTML_ShowToolTip_t ev)
     {
         if (ev.unBrowserHandle == this.BrowserHandle)
         {
+            var message = ev.pchMsg;
             Dispatcher.UIThread.Invoke(() =>
             {
-                this[ToolTip.TipProperty] = ev.pchMsg;
+                this[ToolTip.TipProperty] = message;
                 this[ToolTip.IsOpenProperty] = true;
             });
         }
     }
 
-    private void OnHTML_HideToolTip_t(ICallbackHandler handler, HTML_HideToolTip_t ev)
+    private void OnHTML_HideToolTip_t(ICallbackHandler handler, in HTML_HideToolTip_t ev)
     {
         if (ev.unBrowserHandle == this.BrowserHandle)
         {
@@ -486,7 +487,20 @@ public partial class HTMLSurface : UserControl
     {
         await GetWebToken();
         await this.htmlHost.Start();
-		var result = await client.CallbackManager.RunAsyncCall(() => this.surface.CreateBrowser(userAgent, customCSS), new CancellationTokenSource(15000).Token);
+
+		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+		OpenSteamworks.Callbacks.CallResult<HTML_BrowserReady_t> result;
+		try
+		{
+			result = await client.CallbackManager.RunAsyncCall(
+				() => this.surface.CreateBrowser(userAgent, customCSS), timeout.Token);
+		}
+		catch
+		{
+			this.htmlHost.Stop();
+			throw;
+		}
+
         if (result.Failed)
         {
             this.htmlHost.Stop();

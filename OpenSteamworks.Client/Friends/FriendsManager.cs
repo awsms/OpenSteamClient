@@ -199,17 +199,17 @@ public class FriendsManager : ILogonLifetime
 
     public bool IsFriendsWith(CSteamID steamid) => friends.HasFriend(steamid, EFriendFlags.Immediate);
 
-    private void OnPersonaStateChange(ICallbackHandler handler, PersonaStateChange_t t)
+    private void OnPersonaStateChange(ICallbackHandler handler, in PersonaStateChange_t t)
     {
         EntityChanged?.Invoke(this, new(GetEntity(t.steamid), t.changeFlags));
     }
 
-    private void OnOpenChatDialog(ICallbackHandler handler, OpenChatDialog_t t)
+    private void OnOpenChatDialog(ICallbackHandler handler, in OpenChatDialog_t t)
     {
         FriendsUI?.ShowChatUI(t.ChatID);
     }
 
-    private void OnOpenFriendsDialog(ICallbackHandler handler, OpenFriendsDialog_t t)
+    private void OnOpenFriendsDialog(ICallbackHandler handler, in OpenFriendsDialog_t t)
     {
         FriendsUI?.ShowFriendsList();
     }

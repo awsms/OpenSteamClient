@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
     <CommonNetVersion>net9.0</CommonNetVersion>
-		<CommonOSWVersion>1.2.0</CommonOSWVersion>
+    <CommonOSWVersion>1.2.2</CommonOSWVersion>
     <ProjectRootDir>$(MSBuildThisFileDirectory)</ProjectRootDir>
     <PublishTrimmed>true</PublishTrimmed>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>

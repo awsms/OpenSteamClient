@@ -118,7 +118,7 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
         AvaloniaApp.Current?.RunOnUIThread(DispatcherPriority.Send, SetLibraryAssets);
     }
 
-    private void OnAppLaunchResult(ICallbackHandler handler, AppLaunchResult_t t)
+    private void OnAppLaunchResult(ICallbackHandler handler, in AppLaunchResult_t t)
     {
         if (t.m_eAppError != EAppError.NoError) {
             MessageBox.Show("Launch failed", $"Launch failed with EResult: {t.m_eAppError}");
@@ -127,7 +127,7 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
         }
     }
 
-    private void OnAppEventStateChange(ICallbackHandler handler, AppEventStateChange_t change)
+    private void OnAppEventStateChange(ICallbackHandler handler, in AppEventStateChange_t change)
     {
         UpdatePlayButton(change.NewState);
     }

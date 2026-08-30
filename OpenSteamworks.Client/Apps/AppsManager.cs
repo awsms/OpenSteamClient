@@ -24,7 +24,7 @@ public sealed class AppsManager
         this._steamClient.CallbackManager.Register<AppEventStateChange_t>(OnAppEventStateChange);
     }
 
-    private void OnAppEventStateChange(ICallbackHandler handler, AppEventStateChange_t cb)
+    private void OnAppEventStateChange(ICallbackHandler handler, in AppEventStateChange_t cb)
     {
         try
         {
@@ -43,7 +43,7 @@ public sealed class AppsManager
         }
     }
 
-    private void OnAppInfoUpdate(ICallbackHandler handler, AppInfoUpdateProgress_t cb)
+    private void OnAppInfoUpdate(ICallbackHandler handler, in AppInfoUpdateProgress_t cb)
     {
         try
         {

@@ -70,7 +70,7 @@ public partial class SettingsWindowViewModel : ViewModelBase
     }
 
     // Library folders window
-    private void OnLibraryFoldersChanged(ICallbackHandler handler, LibraryFoldersChanged_t folder)
+    private void OnLibraryFoldersChanged(ICallbackHandler handler, in LibraryFoldersChanged_t folder)
         => AvaloniaApp.Current?.RunOnUIThread(DispatcherPriority.Background, RefreshLibraryFolders);
 
 
