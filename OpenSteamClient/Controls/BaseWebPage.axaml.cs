@@ -92,6 +92,8 @@ public partial class BaseWebPage : BasePage
     private readonly TextBox currentURLTextBox;
     private bool hasLoaded = false;
     private bool callbacksRegistered = false;
+    private bool isFreed = false;
+    private readonly List<ICallbackHandler> callbackHandlers = [];
 
     public BaseWebPage() : base()
     {
@@ -172,6 +174,11 @@ public partial class BaseWebPage : BasePage
 
     private async void BaseWebPage_AttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
+        if (isFreed)
+        {
+            return;
+        }
+
         if (hasLoaded)
         {
             this.webviewControl?.SetBackgroundMode(false);
@@ -192,8 +199,8 @@ public partial class BaseWebPage : BasePage
         var callbackManager = AvaloniaApp.Container.Get<CallbackManager>();
         if (!callbacksRegistered)
         {
-            callbackManager.Register<HTML_CanGoBackAndForward_t>(OnHTML_CanGoBackAndForward_t);
-            callbackManager.Register<HTML_URLChanged_t>(OnHTML_URLChanged_t);
+            callbackHandlers.Add(callbackManager.Register<HTML_CanGoBackAndForward_t>(OnHTML_CanGoBackAndForward_t));
+            callbackHandlers.Add(callbackManager.Register<HTML_URLChanged_t>(OnHTML_URLChanged_t));
             callbacksRegistered = true;
         }
 
@@ -209,6 +216,11 @@ public partial class BaseWebPage : BasePage
         }
         catch (Exception exception)
         {
+            if (isFreed)
+            {
+                return;
+            }
+
             OpenSteamworks.Client.Logger.GeneralLogger.Error("Failed to initialize web page:");
             OpenSteamworks.Client.Logger.GeneralLogger.Error(exception);
 
@@ -243,7 +255,25 @@ public partial class BaseWebPage : BasePage
 
     public override void Free()
     {
-        this.webviewControl?.RemoveBrowser();
+        if (isFreed)
+        {
+            return;
+        }
+
+        isFreed = true;
+        this.AttachedToVisualTree -= BaseWebPage_AttachedToVisualTree;
+        this.DetachedFromVisualTree -= BaseWebPage_DetachedFromVisualTree;
+        foreach (var callbackHandler in callbackHandlers)
+        {
+            callbackHandler.Dispose();
+        }
+        callbackHandlers.Clear();
+        callbacksRegistered = false;
+
+        var webview = this.webviewControl;
+        this.webviewControl = null;
+        this.webviewContainer.Content = null;
+        webview?.RemoveBrowser();
         base.Free();
     }
 }

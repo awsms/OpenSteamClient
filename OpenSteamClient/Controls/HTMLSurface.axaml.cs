@@ -278,6 +278,10 @@ public partial class HTMLSurface : UserControl
     private readonly IClientHTMLSurface surface;
     private readonly ISteamClient client;
     private readonly SteamHTML htmlHost;
+    private readonly IDisposable boundsSubscription;
+    private readonly ICallbackHandler[] callbackHandlers;
+    private bool htmlHostStarted;
+    private bool isDisposed;
     private static readonly Encoding utfEncoder = new UTF32Encoding(false, true, false);
     public HHTMLBrowser BrowserHandle { get; private set; } = 0;
     // The scroll multiplier affects how fast scrolling works. Piping the scroll wheel directly into steam makes scrolling slow, so simply multiply it by this value.
@@ -298,12 +302,15 @@ public partial class HTMLSurface : UserControl
         this.Focusable = true;
 
         this.surface = client.IClientHTMLSurface;
-        client.CallbackManager.Register<HTML_NeedsPaint_t>(this.OnHTML_NeedsPaint);
-        client.CallbackManager.Register<HTML_SetCursor_t>(this.OnHTML_SetCursor);
-        client.CallbackManager.Register<HTML_ShowToolTip_t>(this.OnHTML_ShowToolTip_t);
-        client.CallbackManager.Register<HTML_HideToolTip_t>(this.OnHTML_HideToolTip_t);
+        this.callbackHandlers =
+        [
+            client.CallbackManager.Register<HTML_NeedsPaint_t>(this.OnHTML_NeedsPaint),
+            client.CallbackManager.Register<HTML_SetCursor_t>(this.OnHTML_SetCursor),
+            client.CallbackManager.Register<HTML_ShowToolTip_t>(this.OnHTML_ShowToolTip_t),
+            client.CallbackManager.Register<HTML_HideToolTip_t>(this.OnHTML_HideToolTip_t),
+        ];
         // Reactive bloat. No events here, need to do this instead...
-        this.GetObservable(BoundsProperty).Subscribe(new AnonymousObserver<Rect>(BoundsChange));
+        this.boundsSubscription = this.GetObservable(BoundsProperty).Subscribe(new AnonymousObserver<Rect>(BoundsChange));
     }
 
     private void OnHTML_SetCursor(ICallbackHandler handler, in HTML_SetCursor_t setCursor)
@@ -487,6 +494,13 @@ public partial class HTMLSurface : UserControl
     {
         await GetWebToken();
         await this.htmlHost.Start();
+        this.htmlHostStarted = true;
+
+        if (this.isDisposed)
+        {
+            StopHTMLHost();
+            throw new ObjectDisposedException(nameof(HTMLSurface));
+        }
 
 		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 		OpenSteamworks.Callbacks.CallResult<HTML_BrowserReady_t> result;
@@ -510,6 +524,13 @@ public partial class HTMLSurface : UserControl
         {
             StopHTMLHostAfterFailure();
             throw new InvalidOperationException("CreateBrowser failed due to CallResult failure: " + result.FailureReason);
+        }
+
+        if (this.isDisposed)
+        {
+            this.surface.RemoveBrowser(result.Data.unBrowserHandle);
+            StopHTMLHost();
+            throw new ObjectDisposedException(nameof(HTMLSurface));
         }
 
         this.BrowserHandle = result.Data.unBrowserHandle;
@@ -553,7 +574,7 @@ public partial class HTMLSurface : UserControl
 	{
 		try
 		{
-			this.htmlHost.Stop();
+			StopHTMLHost();
 		}
 		catch (InvalidOperationException)
 		{
@@ -561,20 +582,47 @@ public partial class HTMLSurface : UserControl
 		}
 	}
 
-    public void RemoveBrowser()
+    private void StopHTMLHost()
     {
-        if (this.BrowserHandle == 0)
+        if (!this.htmlHostStarted)
         {
             return;
         }
 
-        // Free surfaces
-        this.surface.RemoveBrowser(this.BrowserHandle);
-
-        // Shutdown the interface if no other surfaces are left
+        this.htmlHostStarted = false;
         this.htmlHost.Stop();
+    }
 
-        this.htmlImgBuffer.ActuallyDispose();
+    public void RemoveBrowser()
+    {
+        if (this.isDisposed)
+        {
+            return;
+        }
+
+        this.isDisposed = true;
+        this.boundsSubscription.Dispose();
+        foreach (var callbackHandler in this.callbackHandlers)
+        {
+            callbackHandler.Dispose();
+        }
+
+        // Invalidate the handle before calling native code so queued callbacks and
+        // input events cannot target a browser while it is being destroyed.
+        var browserHandle = this.BrowserHandle;
+        this.BrowserHandle = 0;
+        try
+        {
+            if (browserHandle != 0)
+            {
+                this.surface.RemoveBrowser(browserHandle);
+            }
+        }
+        finally
+        {
+            // Shutdown the interface if no other surfaces are left.
+            StopHTMLHost();
+        }
     }
 
     public void LoadURL(string url)

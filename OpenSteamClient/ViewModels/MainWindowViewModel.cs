@@ -112,8 +112,14 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        PageHeaderViewModel model = PageList.First(item => item.PageType == pageType);
         var loadedPage = _loadedPages[pageType];
+        if (ReferenceEquals(CurrentPage, loadedPage))
+        {
+            // Detach the page from the visual tree before freeing its native web
+            // browser and render resources.
+            SwitchToPage(typeof(LibraryPage));
+        }
+
         loadedPage.Free();
         loadedPage.DataContext = null;
         _loadedPages.Remove(pageType);
