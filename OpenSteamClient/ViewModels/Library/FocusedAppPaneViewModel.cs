@@ -136,16 +136,28 @@ public partial class FocusedAppPaneViewModel : AvaloniaCommon.ViewModelBase
 
     private void OnAppLaunchResult(ICallbackHandler handler, in AppLaunchResult_t t)
     {
-        if (t.m_eAppError != EAppError.NoError) {
-            MessageBox.Show("Launch failed", $"Launch failed with EResult: {t.m_eAppError}");
-        } else {
-            UpdatePlayButton(EAppState.AppRunning);
-        }
+        if (t.m_GameID != App.ID)
+            return;
+
+        var error = t.m_eAppError;
+        AvaloniaApp.Current?.RunOnUIThread(DispatcherPriority.Send, () =>
+        {
+            if (error != EAppError.NoError)
+                MessageBox.Show("Launch failed", $"Launch failed with EResult: {error}");
+            else
+                UpdatePlayButton(EAppState.AppRunning);
+        });
     }
 
     private void OnAppEventStateChange(ICallbackHandler handler, in AppEventStateChange_t change)
     {
-        UpdatePlayButton(change.NewState);
+        if (change.AppID != App.ID.AppID)
+            return;
+
+        var state = change.NewState;
+        AvaloniaApp.Current?.RunOnUIThread(
+            DispatcherPriority.Send,
+            () => UpdatePlayButton(state));
     }
 
 #pragma warning disable MVVMTK0034
