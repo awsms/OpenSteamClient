@@ -39,10 +39,12 @@
                 </Grid.RowDefinitions>
 
                 <!-- Game list and filters -->
-                <StackPanel Grid.Row="0" x:Name="GameFilters">
+                <Grid Grid.Row="0" x:Name="GameFilters" ColumnDefinitions="*,Auto" ColumnSpacing="6">
                     <!-- Filters area -->
-                    <TextBox x:Name="SearchBar" c:Translatable.TranslationKey="#Library_SearchBarWatermark" Text="{Binding SearchText}"/>
-                </StackPanel>
+                    <TextBox Grid.Column="0" x:Name="SearchBar" c:Translatable.TranslationKey="#Library_SearchBarWatermark" Text="{Binding SearchText}"/>
+                    <ToggleButton Grid.Column="1" Width="36" IsChecked="{Binding ShowOnlyReadyToPlay}"
+                                  Content="▶" ToolTip.Tip="Show only ready-to-play games"/>
+                </Grid>
 
                 <TreeView Grid.Row="1" SelectedItems="{Binding SelectedNodes}" ItemsSource="{Binding Nodes}">
                     <!-- Game list -->

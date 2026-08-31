@@ -23,6 +23,7 @@ namespace OpenSteamClient.ViewModels.Library;
 public partial class LibraryAppViewModel : Node
 {
     public IApp App { get; init; }
+    public bool IsInstalled => App is IAppInstallInterface { IsInstalled: true };
 
     public LibraryAppViewModel(CGameID gameid)
     {
@@ -49,6 +50,7 @@ public partial class LibraryAppViewModel : Node
         if (e.PropertyName is nameof(App.Name) or nameof(App.State))
         {
             CalculateName();
+            OnPropertyChanged(nameof(IsInstalled));
         }
     }
 

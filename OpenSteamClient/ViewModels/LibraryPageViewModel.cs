@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls;
 using OpenSteamClient.ViewModels.Library;
@@ -39,14 +40,21 @@ public partial class LibraryPageViewModel : AvaloniaCommon.ViewModelBase
         }
     }
 
+    [ObservableProperty]
+    private bool showOnlyReadyToPlay;
+
+    partial void OnShowOnlyReadyToPlayChanged(bool value) => UpdateGamesList();
+
     private void UpdateGamesList()
     {
         foreach (var coll in Nodes)
         {
-            if (searchText == string.Empty) {
+            if (searchText == string.Empty && !ShowOnlyReadyToPlay) {
                 coll.Children.ClearFilter();
             } else {
-                coll.Children.SetFilter(f => f.GetSortableName().Contains(searchText, StringComparison.InvariantCultureIgnoreCase));
+                coll.Children.SetFilter(node =>
+                    node.GetSortableName().Contains(searchText, StringComparison.InvariantCultureIgnoreCase) &&
+                    (!ShowOnlyReadyToPlay || node is LibraryAppViewModel { IsInstalled: true }));
                 coll.Children.Sort();
             }
         }
@@ -92,7 +100,9 @@ public partial class LibraryPageViewModel : AvaloniaCommon.ViewModelBase
                     continue;
                 }
 
-                collectionviewmodel.Children.AddUnique(new LibraryAppViewModel(app));
+                var appViewModel = new LibraryAppViewModel(app);
+                appViewModel.PropertyChanged += LibraryAppOnPropertyChanged;
+                collectionviewmodel.Children.AddUnique(appViewModel);
                 addCount++;
             }
 
@@ -111,6 +121,14 @@ public partial class LibraryPageViewModel : AvaloniaCommon.ViewModelBase
                 }
             }
         }
+
+        UpdateGamesList();
+    }
+
+    private void LibraryAppOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (ShowOnlyReadyToPlay && e.PropertyName == nameof(LibraryAppViewModel.IsInstalled))
+            AvaloniaApp.Current?.RunOnUIThread(Avalonia.Threading.DispatcherPriority.Background, UpdateGamesList);
     }
 
     private void SelectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
