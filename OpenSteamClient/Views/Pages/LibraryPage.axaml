@@ -8,8 +8,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OpenSteamClient.Views.LibraryPage"
-        x:DataType="vm:LibraryPageViewModel"
-        KeyDown="LibraryPage_OnKeyDown">
+        x:DataType="vm:LibraryPageViewModel">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
